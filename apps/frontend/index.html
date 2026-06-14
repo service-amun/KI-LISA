@@ -275,6 +275,74 @@ body {
 }
 .msg-warnung-icon { flex-shrink: 0; font-size: 15px; }
 
+/* Prüfungs-Banner (Orange = Hinweis, Rot = Hochrisiko) */
+.pruefung-banner {
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pruefung-banner.orange {
+  background: var(--orange-h);
+  border: 1.5px solid #ffb74d;
+}
+.pruefung-banner.rot {
+  background: var(--rot-h);
+  border: 1.5px solid #ef9a9a;
+}
+.pruefung-banner-kopf {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 700;
+  font-size: 14px;
+}
+.pruefung-banner.orange .pruefung-banner-kopf { color: #7a3a00; }
+.pruefung-banner.rot    .pruefung-banner-kopf { color: var(--rot); }
+.pruefung-banner-text { font-size: 13px; line-height: 1.55; }
+.pruefung-banner.orange .pruefung-banner-text { color: #7a3a00; }
+.pruefung-banner.rot    .pruefung-banner-text { color: #7a1f1f; }
+.pruefung-btn {
+  align-self: flex-start;
+  border: none;
+  border-radius: 9px;
+  padding: 9px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.pruefung-btn:hover { opacity: .85; }
+.pruefung-btn.orange { background: #e65100; color: #fff; }
+.pruefung-btn.rot    { background: var(--rot); color: #fff; }
+
+/* Eingabe gesperrt */
+.eingabe-gesperrt {
+  pointer-events: none;
+  opacity: .45;
+}
+.eingabe-sperre {
+  background: var(--orange-h);
+  border: 1.5px solid #ffb74d;
+  border-radius: 12px;
+  padding: 11px 16px;
+  font-size: 13px;
+  color: #7a3a00;
+  font-weight: 600;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.eingabe-sperre.rot-sperre {
+  background: var(--rot-h);
+  border-color: #ef9a9a;
+  color: #7a1f1f;
+}
+.eingabe-sperre.sichtbar { display: flex; }
+
 /* Suchergebnisse */
 .suchergebnisse {
   margin-top: 12px;
@@ -721,7 +789,11 @@ body {
 
         <!-- Eingabe -->
         <div class="eingabe-wrapper">
-          <div class="eingabe-feld">
+          <div class="eingabe-sperre" id="eingabe-sperre">
+            <span>⚠️</span>
+            <span id="sperre-text">Bitte bestätigen Sie den Hinweis oben, bevor Sie weiterschreiben.</span>
+          </div>
+          <div class="eingabe-feld" id="eingabe-feld">
             <textarea
               class="eingabe-text"
               id="eingabe"
@@ -1034,6 +1106,7 @@ async function neuerChat() {
   document.getElementById('eingabe').value = '';
   document.getElementById('eingabe').style.height = 'auto';
   risikoZuruecksetzen();
+  eingabeFreigeben();
   zeigSeite('chat', document.getElementById('nav-chat'));
   document.getElementById('eingabe').focus();
 }
@@ -1044,8 +1117,38 @@ async function alleChatsLoeschen() {
   neuerChat();
 }
 
+// ── Eingabe sperren / freigeben ───────────────────────────────────────────
+let eingabeSperreAktiv = false;
+
+function eingabeSperren(typ) {
+  // typ: 'orange' (Hinweis) oder 'rot' (Hochrisiko)
+  eingabeSperreAktiv = true;
+  const sperre = document.getElementById('eingabe-sperre');
+  const feld   = document.getElementById('eingabe-feld');
+  const text   = document.getElementById('sperre-text');
+
+  sperre.className = 'eingabe-sperre sichtbar' + (typ === 'rot' ? ' rot-sperre' : '');
+  text.textContent = typ === 'rot'
+    ? 'Hochrisiko erkannt — bitte bestätigen Sie oben, dass Sie die Einschränkung gelesen haben.'
+    : 'Bitte bestätigen Sie den Datenschutz-Hinweis oben, bevor Sie weiterschreiben.';
+  feld.classList.add('eingabe-gesperrt');
+  document.getElementById('eingabe').disabled = true;
+  document.getElementById('senden-btn').disabled = true;
+}
+
+function eingabeFreigeben() {
+  eingabeSperreAktiv = false;
+  document.getElementById('eingabe-sperre').className = 'eingabe-sperre';
+  document.getElementById('eingabe-feld').classList.remove('eingabe-gesperrt');
+  document.getElementById('eingabe').disabled = false;
+  document.getElementById('senden-btn').disabled = false;
+  document.getElementById('eingabe').focus();
+}
+
 // ── Nachricht senden ──────────────────────────────────────────────────────
 async function nachrichtSenden() {
+  if (eingabeSperreAktiv) return;
+
   const eingabe = document.getElementById('eingabe');
   const text = eingabe.value.trim();
   if (!text) return;
@@ -1075,26 +1178,45 @@ async function nachrichtSenden() {
 
     if (!r.ok) {
       nachrichtAnzeigen('ki', 'Es gab ein technisches Problem. Bitte versuchen Sie es erneut.');
+      document.getElementById('senden-btn').disabled = false;
     } else {
       const d = await r.json();
+
       if (d.blocked) {
-        nachrichtAnzeigen('ki', d.text, [], true);
+        // Absolut verboten (EU AI Act Art. 5) — Antwort zeigen, aber sperren
+        nachrichtAnzeigen('ki', d.text, [], 'rot');
+        complianceAktualisieren({ risk_level: 'blocked' });
+        eingabeSperren('rot');
+      } else if (d.compliance && d.compliance.requires_human_oversight) {
+        // Hochrisiko (rot) — Antwort zeigen, Mensch muss bestätigen
+        nachrichtAnzeigen('ki', d.text, d.warnings || [], 'rot');
+        complianceAktualisieren(d.compliance);
+        eingabeSperren('rot');
+        chatListeLaden();
+      } else if (d.warnings && d.warnings.length > 0) {
+        // Datenschutz-Hinweis (orange) — Antwort zeigen, Mensch muss bestätigen
+        nachrichtAnzeigen('ki', d.text, d.warnings, 'orange');
+        complianceAktualisieren(d.compliance);
+        eingabeSperren('orange');
+        chatListeLaden();
       } else {
-        nachrichtAnzeigen('ki', d.text, d.warnings || []);
+        // Grün — direkt weiter
+        nachrichtAnzeigen('ki', d.text);
         complianceAktualisieren(d.compliance);
         chatListeLaden();
+        document.getElementById('senden-btn').disabled = false;
       }
     }
   } catch {
     tippindikatorVerstecken();
     nachrichtAnzeigen('ki', '⚠ Keine Verbindung zum KI-LISA System. Bitte prüfen Sie, ob KI-LISA gestartet ist.');
+    document.getElementById('senden-btn').disabled = false;
   }
-
-  document.getElementById('senden-btn').disabled = false;
 }
 
 // ── Nachrichten anzeigen ──────────────────────────────────────────────────
-function nachrichtAnzeigen(rolle, inhalt, warnungen = [], blockiert = false) {
+// pruefung: false | 'orange' | 'rot'
+function nachrichtAnzeigen(rolle, inhalt, warnungen = [], pruefung = false) {
   const container = document.getElementById('nachrichten');
   const div = document.createElement('div');
   div.className = 'msg msg-' + (rolle === 'nutzer' ? 'nutzer' : 'ki');
@@ -1102,20 +1224,46 @@ function nachrichtAnzeigen(rolle, inhalt, warnungen = [], blockiert = false) {
   // Text aufbereiten
   let html = escHtml(inhalt)
     .replace(/\n/g, '<br>')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/^• /gm, '&bull; ');
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
   let blasenHtml = `<div class="msg-blase">${html}</div>`;
 
-  // Warnungen
-  if (warnungen && warnungen.length > 0) {
-    const warnHtml = warnungen.map(w =>
+  // Einfache Hinweis-Warnungen (nur wenn kein Prüfungs-Banner folgt)
+  if (warnungen && warnungen.length > 0 && !pruefung) {
+    blasenHtml += warnungen.map(w =>
       `<div class="msg-warnung">
         <span class="msg-warnung-icon">⚠️</span>
         <span>${escHtml(w)}</span>
       </div>`
     ).join('');
-    blasenHtml += warnHtml;
+  }
+
+  // Prüfungs-Banner (Orange oder Rot) — Mensch muss bestätigen
+  if (pruefung === 'orange') {
+    const warnText = warnungen.length > 0
+      ? escHtml(warnungen[0])
+      : 'Ihre Nachricht enthält persönliche Daten. Bitte prüfen Sie, ob diese Informationen wirklich notwendig sind (DSGVO Art. 5).';
+    blasenHtml += `
+      <div class="pruefung-banner orange">
+        <div class="pruefung-banner-kopf"><span>⚠️</span> Datenschutz-Hinweis</div>
+        <div class="pruefung-banner-text">${warnText}</div>
+        <button class="pruefung-btn orange" onclick="eingabeFreigeben(); this.closest('.pruefung-banner').style.opacity='.5'">
+          Verstanden — weiter schreiben
+        </button>
+      </div>`;
+  } else if (pruefung === 'rot') {
+    blasenHtml += `
+      <div class="pruefung-banner rot">
+        <div class="pruefung-banner-kopf"><span>🔴</span> Menschliche Prüfung erforderlich</div>
+        <div class="pruefung-banner-text">
+          Diese Anfrage betrifft eine Entscheidung mit hohem Risiko (EU AI Act Art. 6 &amp; Art. 14).<br>
+          <strong>Die KI-Antwort darf nicht automatisch verwendet werden.</strong><br>
+          Bitte lassen Sie das Ergebnis von einer zuständigen Fachkraft prüfen und bestätigen Sie dann.
+        </div>
+        <button class="pruefung-btn rot" onclick="eingabeFreigeben(); this.closest('.pruefung-banner').style.opacity='.5'">
+          Ich habe die Antwort geprüft — weiter
+        </button>
+      </div>`;
   }
 
   // KI-Disclaimer
@@ -1147,14 +1295,18 @@ function complianceAktualisieren(compliance) {
   const chip = document.getElementById('risiko-chip');
   const text = document.getElementById('compliance-text');
 
-  if (compliance.risk_level === 'high') {
+  if (compliance.risk_level === 'blocked') {
     chip.className = 'risk-chip risk-high';
-    chip.innerHTML = '<span>⚠️</span> Hochrisiko erkannt';
-    text.textContent = 'Bitte lassen Sie das Ergebnis von einer Fachkraft prüfen (EU AI Act Art. 14)';
+    chip.innerHTML = '<span>🚫</span> Anfrage nicht erlaubt';
+    text.textContent = 'Verbotene KI-Praxis erkannt (EU AI Act Art. 5) — Bestätigung erforderlich';
+  } else if (compliance.risk_level === 'high' || compliance.requires_human_oversight) {
+    chip.className = 'risk-chip risk-high';
+    chip.innerHTML = '<span>🔴</span> Menschliche Prüfung nötig';
+    text.textContent = 'Hochrisiko-Entscheidung — bitte Fachkraft hinzuziehen (EU AI Act Art. 14)';
   } else if (compliance.warnings && compliance.warnings.length > 0) {
     chip.className = 'risk-chip risk-medium';
-    chip.innerHTML = '<span>⚠️</span> Hinweis vorhanden';
-    text.textContent = compliance.warnings[0];
+    chip.innerHTML = '<span>⚠️</span> Datenschutz-Hinweis';
+    text.textContent = 'Persönliche Daten erkannt — Bestätigung erforderlich (DSGVO Art. 5)';
   } else {
     risikoZuruecksetzen();
   }
