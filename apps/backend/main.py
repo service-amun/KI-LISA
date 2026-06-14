@@ -29,6 +29,8 @@ import session_manager
 from audit.audit_logger import write_audit_entry, get_audit_entries
 from skills.guardrail_skill import check_input, restore_tokens
 from skills.router_skill import classify as route_query
+from skills.reflection_skill import kontext_aufbauen, auto_extrahieren
+from compliance.weekly_checker import bericht as compliance_bericht, komplett_check
 from routers.approvals import router as approvals_router
 
 # ── PII-Zwischenspeicher (nur Arbeitsspeicher, nie auf Disk) ─────────────────
@@ -187,9 +189,14 @@ def chat_in_session(session_id: str, body: ChatRequest, request: Request):
     # ── Schritt 3: Originalnachricht (mit PII) lokal speichern ───────────
     session_manager.add_message(session_id, "user", user_text, warnings=guard.warnings)
 
-    # ── Schritt 4: Routing + LLM-Aufruf ──────────────────────────────────
+    # ── Schritt 4: Routing + Reflection + LLM-Aufruf ─────────────────────
     route = route_query(llm_text)          # Modell, Token-Budget, Temperatur
     system_prompt = session_manager.get_system_prompt(session_id, llm_text)
+
+    # Relevante Erinnerungen aus früheren Gesprächen anhängen
+    gedaechtnis = kontext_aufbauen(llm_text)
+    if gedaechtnis:
+        system_prompt = system_prompt + "\n\n" + gedaechtnis
 
     # Kontext tokenisieren — nur so viele Nachrichten wie der Router empfiehlt
     kontext_roh = session_manager.get_context_messages(
@@ -212,9 +219,12 @@ def chat_in_session(session_id: str, body: ChatRequest, request: Request):
         temperature=route.temperature,
     )
 
-    # ── Schritt 5: Tokens in Antwort durch Originaldaten ersetzen ────────
+    # ── Schritt 5: Tokens ersetzen + Fakten in Gedächtnis speichern ──────
     aktuelles_mapping = _pii_zwischenspeicher.get(session_id, {})
     antwort_text = restore_tokens(response.text, aktuelles_mapping)
+
+    # Wichtige Fakten aus der restaurierten Antwort merken
+    auto_extrahieren(antwort_text, session_id)
 
     # ── Schritt 6: Wiederhergestellte Antwort speichern ──────────────────
     session_manager.add_message(session_id, "assistant", antwort_text)
@@ -366,3 +376,17 @@ def ai_status():
         "compliance": "EU AI Act Art. 52 — KI-System aktiv",
         "risikoklasse": "Limited Risk",
     }
+
+
+# ── Compliance ────────────────────────────────────────────────────────────────
+
+@app.get("/compliance/status")
+def compliance_status():
+    """Letzter Compliance-Bericht ohne neuen Netzwerkaufruf."""
+    return compliance_bericht()
+
+
+@app.post("/compliance/check")
+def compliance_check():
+    """Führt vollständigen Check durch inkl. EUR-Lex HEAD-Requests."""
+    return komplett_check()

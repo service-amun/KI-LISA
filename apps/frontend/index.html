@@ -1428,12 +1428,32 @@ function projektLoeschen(i) {
 // ── Status-Seite ──────────────────────────────────────────────────────────
 async function statusLaden() {
   try {
-    const [runsR, apprR] = await Promise.all([
+    const [runsR, apprR, complR] = await Promise.all([
       fetch(`${API}/agent/runs`).then(r => r.json()),
       fetch(`${API}/approvals`).then(r => r.json()),
+      fetch(`${API}/compliance/status`).then(r => r.json()).catch(() => null),
     ]);
     const runs  = Array.isArray(runsR) ? runsR : [];
     const apprs = Array.isArray(apprR) ? apprR : [];
+
+    // Compliance-Frist aus Backend
+    if (complR && complR.frist) {
+      const tage = complR.frist.tage_verbleibend;
+      document.getElementById('k-tage').textContent = tage + ' Tage';
+      document.getElementById('frist-anzeige').textContent = tage > 0 ? `⚠ Noch ${tage} Tage` : '✓ Frist abgelaufen';
+      document.getElementById('frist-text').textContent = `Vollständige EU AI Act Pflichten ab ${complR.frist.datum} — noch ${tage} Tage`;
+      const gesamt = 420;
+      document.getElementById('fortschritt').style.width = Math.min(100, Math.round((1 - tage / gesamt) * 100)) + '%';
+    }
+
+    // EUR-Lex Änderungen
+    if (complR && complR.gesetzes_aenderungen && complR.gesetzes_aenderungen.length > 0) {
+      const chip = document.getElementById('risiko-chip');
+      chip.className = 'risk-chip risk-medium';
+      chip.innerHTML = `<span>⚠️</span> Gesetzesänderung erkannt`;
+      document.getElementById('compliance-text').textContent =
+        `Bitte prüfen: ${complR.gesetzes_aenderungen.join(', ')} wurde aktualisiert`;
+    }
 
     document.getElementById('k-runs').textContent  = runs.length;
     document.getElementById('k-freig').textContent = apprs.length;
