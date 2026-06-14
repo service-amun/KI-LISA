@@ -31,7 +31,12 @@ from skills.guardrail_skill import check_input, restore_tokens
 from skills.router_skill import classify as route_query
 from skills.reflection_skill import kontext_aufbauen, auto_extrahieren
 from compliance.weekly_checker import bericht as compliance_bericht, komplett_check
+from compliance.scheduler import starten as compliance_starten
 from routers.approvals import router as approvals_router
+import gateway as tool_gateway
+
+# Compliance-Scheduler beim Start aktivieren (daemon thread)
+compliance_starten()
 
 # ── PII-Zwischenspeicher (nur Arbeitsspeicher, nie auf Disk) ─────────────────
 # session_id → {token: originalwert}
@@ -297,7 +302,12 @@ def agent_run(body: AgentRunRequest, request: Request):
         return {"status": "blocked", "message": guard.block_reason, "results": []}
 
     run_id = database.create_run(body.task)
-    results = agent_runtime.run_task(body.task)
+    # Gateway: Guardrails + Audit für jeden Tool-Aufruf
+    task_lower = body.task.lower()
+    if task_lower.startswith("http://") or task_lower.startswith("https://"):
+        results = [tool_gateway.ausfuehren("abruf", body.task)]
+    else:
+        results = [tool_gateway.ausfuehren("suche", body.task)]
 
     all_success = all(r.success for r in results)
     database.finish_run(
@@ -347,15 +357,22 @@ class FetchRequest(BaseModel):
 @app.post("/tools/search")
 def tool_search(body: SearchRequest, request: Request):
     check_rate_limit(request)
-    result = agent_runtime.run_search(body.query)
+    result = tool_gateway.ausfuehren("suche", body.query)
     return {"success": result.success, "summary": result.summary, "error": result.error}
 
 
 @app.post("/tools/fetch")
 def tool_fetch(body: FetchRequest, request: Request):
     check_rate_limit(request)
-    result = agent_runtime.run_fetch(body.url)
+    result = tool_gateway.ausfuehren("abruf", body.url)
     return {"success": result.success, "summary": result.summary, "error": result.error}
+
+
+@app.get("/tools")
+def tools_liste():
+    """Listet verfügbare Tools mit Beschreibung."""
+    from tools.standard_tools import tool_info
+    return tool_info()
 
 
 # ── Audit-Log ─────────────────────────────────────────────────────────────────

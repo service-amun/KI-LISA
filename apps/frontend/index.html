@@ -1276,11 +1276,17 @@ function nachrichtAnzeigen(rolle, inhalt, warnungen = [], pruefung = false, plat
       <div class="pruefung-banner orange">
         <div class="pruefung-banner-kopf"><span>⚠️</span> Datenschutz-Hinweis</div>
         <div class="pruefung-banner-text">${warnText}${hatChips
-          ? '<br><small style="opacity:.75">Klicken Sie auf die orangefarbenen Felder in der Antwort, um die Originaldaten wieder einzusetzen.</small>'
+          ? '<br><small style="opacity:.8">Klicken Sie auf die <strong>orangefarbenen Felder</strong> in der Antwort, um die Originaldaten einzusetzen.</small>'
           : ''}</div>
-        <button class="pruefung-btn orange" onclick="eingabeFreigeben(); this.closest('.pruefung-banner').style.opacity='.5'">
-          Verstanden — weiter schreiben
-        </button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${hatChips ? `<button class="pruefung-btn orange" onclick="alleEinsetzen(this)">
+            Alle einsetzen &amp; weiter
+          </button>` : ''}
+          <button class="pruefung-btn orange" style="background:transparent;color:var(--orange);border:1.5px solid var(--orange)"
+            onclick="eingabeFreigeben(); this.closest('.pruefung-banner').style.opacity='.5'">
+            Verstanden — weiter
+          </button>
+        </div>
       </div>`;
   } else if (pruefung === 'rot') {
     blasenHtml += `
@@ -1550,6 +1556,13 @@ function platzhalterEinsetzen(btn) {
   span.className = 'platzhalter-eingesetzt';
   span.textContent = btn.dataset.wert;
   btn.replaceWith(span);
+}
+
+function alleEinsetzen(btn) {
+  const msg = btn.closest('.msg');
+  if (msg) msg.querySelectorAll('.platzhalter-chip').forEach(chip => platzhalterEinsetzen(chip));
+  eingabeFreigeben();
+  btn.closest('.pruefung-banner').style.opacity = '.5';
 }
 
 // ── Hilfsfunktionen ───────────────────────────────────────────────────────
