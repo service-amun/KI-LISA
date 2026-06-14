@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KI-LISA — Ihr KI-Assistent</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f5f5f3;color:#1a1a1a;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* Navigation */
+.topnav{background:#fff;border-bottom:1px solid #e8e8e5;padding:0 1.25rem;display:flex;align-items:center;height:52px;flex-shrink:0;gap:10px}
+.nav-brand{font-size:16px;font-weight:700;letter-spacing:-0.3px}
+.nav-sub{font-size:12px;color:#aaa}
+.nav-status{margin-left:auto;font-size:12px;padding:4px 12px;border-radius:20px;font-weight:500}
+.s-ok{background:#e8f5e2;color:#1a6b00}
+.s-off{background:#fce8e8;color:#7a1f1f}
+
+/* Layout */
+.main{display:flex;flex:1;overflow:hidden}
+.sidebar{width:220px;background:#fff;border-right:1px solid #e8e8e5;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sidebar-section{padding:14px 12px 4px;font-size:11px;color:#aaa;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.sitem{display:flex;align-items:center;gap:9px;padding:9px 14px;border-radius:8px;margin:1px 6px;cursor:pointer;font-size:13px;color:#444;transition:background .1s}
+.sitem:hover{background:#f5f5f3}
+.sitem.active{background:#f0f0ee;color:#1a1a1a;font-weight:600}
+.sitem .ic{width:20px;text-align:center;font-size:15px}
+.sidebar-footer{padding:10px;border-top:1px solid #e8e8e5;text-align:center;font-size:11px;color:#ccc;margin-top:auto}
+.chat-list-item{display:flex;align-items:center;gap:7px;padding:7px 14px;border-radius:8px;margin:1px 6px;cursor:pointer;font-size:12px;color:#666}
+.chat-list-item:hover{background:#f5f5f3}
+.sadd{padding:6px 14px;font-size:12px;color:#bbb;cursor:pointer;margin:1px 6px;border-radius:8px}
+.sadd:hover{color:#555;background:#f5f5f3}
+
+/* Seiten */
+.content{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.page{display:none;flex:1;overflow:hidden;flex-direction:column}
+.page.active{display:flex}
+
+/* Chat */
+.chat-wrap{flex:1;display:flex;flex-direction:column;max-width:800px;margin:0 auto;padding:.75rem 1rem;width:100%;min-height:0}
+.chat-messages{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:.5rem 0;min-height:0}
+.msg{max-width:86%;padding:11px 15px;border-radius:14px;font-size:14px;line-height:1.65;word-break:break-word}
+.msg-user{background:#1a1a1a;color:#fff;align-self:flex-end;border-radius:14px 14px 3px 14px}
+.msg-ai{background:#fff;border:1px solid #e8e8e5;align-self:flex-start;border-radius:14px 14px 14px 3px}
+.msg-meta{font-size:11px;color:#bbb;margin-top:5px}
+.msg-warn{background:#fff8ec;border:1px solid #f5c97a;border-radius:7px;padding:7px 11px;font-size:12px;color:#7a4a00;margin-top:8px;display:flex;gap:6px;align-items:flex-start}
+.msg-warn-icon{flex-shrink:0}
+.msg-results{background:#f0f7e6;border:1px solid #c5e0a0;padding:10px 12px;border-radius:9px;margin-top:10px;font-size:13px}
+.msg-result-item{padding:8px 0;border-bottom:1px solid #dcefc0}
+.msg-result-item:last-child{border-bottom:none}
+.msg-result-title{font-weight:600;color:#1a1a1a;margin-bottom:2px}
+.msg-result-url{font-size:11px;color:#4a8a00;margin-bottom:4px}
+.msg-result-text{color:#555;font-size:12px;line-height:1.5}
+.chat-input-area{background:#fff;border:1px solid #e8e8e5;border-radius:14px;padding:10px 12px;display:flex;gap:8px;align-items:flex-end;margin-top:10px;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.chat-input{flex:1;border:none;outline:none;font-size:14px;font-family:inherit;resize:none;max-height:140px;background:transparent;line-height:1.5}
+.chat-send{background:#1a1a1a;color:#fff;border:none;border-radius:9px;width:38px;height:38px;cursor:pointer;font-size:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:opacity .15s}
+.chat-send:disabled{opacity:.3;cursor:default}
+.typing{display:flex;gap:5px;padding:11px 15px;background:#fff;border:1px solid #e8e8e5;border-radius:14px;align-self:flex-start}
+.typing span{width:7px;height:7px;background:#ccc;border-radius:50%;animation:bounce .8s infinite}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+.chat-hint{font-size:11px;color:#ccc;text-align:center;margin-top:5px}
+
+/* Compliance-Leiste im Chat */
+.compliance-bar{background:#fff;border-bottom:1px solid #e8e8e5;padding:7px 1rem;font-size:11px;color:#888;display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0}
+.comp-badge{padding:3px 9px;border-radius:20px;font-weight:500;font-size:11px}
+.comp-ok{background:#e8f5e2;color:#1a6b00}
+.comp-warn{background:#fff3cd;color:#856404}
+.comp-high{background:#fce8e8;color:#7a1f1f}
+
+/* Innenseiten */
+.page-inner{flex:1;overflow-y:auto;padding:1.5rem;max-width:1000px;margin:0 auto;width:100%}
+.page-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem}
+.page-title{font-size:19px;font-weight:600}
+.page-sub{font-size:13px;color:#888;margin-top:3px}
+.btn-primary{background:#1a1a1a;color:#fff;border:none;border-radius:9px;padding:9px 18px;font-size:13px;cursor:pointer;font-weight:500}
+.btn-primary:hover{background:#333}
+
+/* Skills */
+.skill-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-top:1rem}
+.skill-card{background:#fff;border:1px solid #e8e8e5;border-radius:13px;padding:1.25rem;cursor:pointer;transition:all .15s}
+.skill-card:hover{border-color:#888;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+.skill-card.active-skill{border-color:#2a7a00;background:#f0f7e6}
+.skill-icon{font-size:24px;margin-bottom:9px}
+.skill-name{font-size:14px;font-weight:600;margin-bottom:3px}
+.skill-desc{font-size:12px;color:#888;line-height:1.4}
+
+/* Projekte */
+.proj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:1rem}
+.proj-card{background:#fff;border:1px solid #e8e8e5;border-radius:13px;padding:1.25rem;transition:box-shadow .15s}
+.proj-card:hover{box-shadow:0 2px 14px rgba(0,0,0,.07)}
+.proj-name{font-size:15px;font-weight:600;margin-bottom:6px}
+.proj-desc{font-size:13px;color:#888;margin-bottom:12px;line-height:1.5}
+.proj-meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.tag{font-size:11px;padding:3px 9px;border-radius:20px;background:#f0f0ee;color:#555}
+.tag-hoch{background:#fce8e8;color:#7a1f1f}
+.tag-del{cursor:pointer;color:#ccc;font-size:12px;background:none;border:none;padding:2px 4px}
+.tag-del:hover{color:#7a1f1f}
+
+/* Status */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:1.5rem}
+.metric{background:#fff;border-radius:12px;padding:1rem 1.25rem;border:1px solid #e8e8e5}
+.metric-label{font-size:12px;color:#888;margin-bottom:7px}
+.metric-value{font-size:24px;font-weight:600}
+.card{background:#fff;border:1px solid #e8e8e5;border-radius:13px;padding:1.25rem;margin-bottom:1rem}
+.card-title{font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
+.comp-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f0f0ee;font-size:13px}
+.comp-row:last-child{border-bottom:none}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:8px;flex-shrink:0}
+.dot-ok{background:#2a7a00}
+.dot-warn{background:#c87800}
+.prog{background:#f0f0ee;border-radius:4px;height:5px;margin-top:10px;overflow:hidden}
+.prog-fill{height:100%;background:#c87800;border-radius:4px;transition:width .5s}
+.run-row,.appr-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0ee;font-size:13px}
+.run-row:last-child,.appr-row:last-child{border-bottom:none}
+.btn-ok{background:#e8f5e2;color:#1a6b00;border:none;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer}
+.btn-no{background:#fce8e8;color:#7a1f1f;border:none;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;margin-left:4px}
+.empty{text-align:center;padding:2rem;color:#ccc;font-size:13px}
+
+/* Modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:100}
+.modal.open{display:flex}
+.modal-box{background:#fff;border-radius:18px;padding:1.75rem;width:90%;max-width:480px;box-shadow:0 8px 40px rgba(0,0,0,.12)}
+.modal-title{font-size:17px;font-weight:600;margin-bottom:1.25rem}
+.fg{margin-bottom:14px}
+.fl{font-size:12px;color:#888;margin-bottom:5px;display:block;font-weight:500}
+input.fi,textarea.fi,select.fi{width:100%;border:1px solid #e8e8e5;border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none}
+input.fi:focus,textarea.fi:focus,select.fi:focus{border-color:#888}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:1.25rem}
+.btn-cancel{background:#f0f0ee;color:#1a1a1a;border:none;border-radius:9px;padding:9px 18px;font-size:13px;cursor:pointer}
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="nav-brand">KI-LISA</div>
+  <span class="nav-sub">Ihr KI-Assistent · EU-konform</span>
+  <span class="nav-status s-off" id="nav-status">○ Verbinde...</span>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+    <div style="padding:8px 6px 4px">
+      <div class="sitem active" id="nav-chat" onclick="showPage('chat',this)">
+        <span class="ic">💬</span> Chat
+      </div>
+      <div class="sitem" id="nav-skills" onclick="showPage('skills',this)">
+        <span class="ic">⚡</span> Schnellhilfe
+      </div>
+      <div class="sitem" id="nav-projects" onclick="showPage('projects',this)">
+        <span class="ic">📁</span> Projekte
+      </div>
+      <div class="sitem" id="nav-status-pg" onclick="showPage('status',this)">
+        <span class="ic">🛡</span> Status
+      </div>
+    </div>
+
+    <div class="sidebar-section">Meine Chats</div>
+    <div id="chat-list"></div>
+    <div class="sadd" onclick="newChat()" style="font-weight:600;color:#333">✏️ Neuer Chat</div>
+    <div class="sadd" onclick="if(confirm('Alle Chats löschen?'))clearAllChats()">🗑 Verlauf löschen</div>
+
+    <div class="sidebar-footer">KI-LISA v0.3.0 · EU AI Act · DSGVO</div>
+  </div>
+
+  <div class="content">
+
+    <!-- CHAT -->
+    <div class="page active" id="page-chat">
+      <div class="compliance-bar" id="compliance-bar">
+        <span>🛡</span>
+        <span class="comp-badge comp-ok" id="risk-badge">Risiko: Niedrig</span>
+        <span id="compliance-info" style="color:#aaa">Basis-Compliance aktiv (DSGVO Art. 5 · EU AI Act Art. 52)</span>
+      </div>
+      <div class="chat-wrap">
+        <div class="chat-messages" id="chat-messages">
+          <div class="msg msg-ai">
+            Guten Tag! Ich bin KI-LISA, Ihr KI-Assistent.
+            Wie kann ich Ihnen heute helfen? Sie können mich alles fragen — ich bin diskret und EU-konform.
+            <div class="msg-meta">KI-LISA · EU AI Act Art. 52 · KI-System aktiv</div>
+          </div>
+        </div>
+        <div class="chat-input-area">
+          <textarea class="chat-input" id="chat-input" rows="1"
+            placeholder="Ihre Frage eingeben... (Enter = Senden)"
+            onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+          <button class="chat-send" id="send-btn" onclick="sendMessage()">➤</button>
+        </div>
+        <div class="chat-hint">Enter = Senden &nbsp;·&nbsp; Shift+Enter = neue Zeile</div>
+      </div>
+    </div>
+
+    <!-- SCHNELLHILFE / SKILLS -->
+    <div class="page" id="page-skills">
+      <div class="page-inner">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Schnellhilfe</div>
+            <div class="page-sub">Klicken Sie einen Bereich an — der Chat öffnet sich mit dem richtigen Einstieg</div>
+          </div>
+        </div>
+        <div class="skill-grid" id="skill-grid"></div>
+      </div>
+    </div>
+
+    <!-- PROJEKTE -->
+    <div class="page" id="page-projects">
+      <div class="page-inner">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Meine Projekte</div>
+            <div class="page-sub">Aufgaben und Themen organisieren</div>
+          </div>
+          <button class="btn-primary" onclick="openNewProject()">+ Neues Projekt</button>
+        </div>
+        <div class="proj-grid" id="proj-grid"></div>
+      </div>
+    </div>
+
+    <!-- STATUS -->
+    <div class="page" id="page-status">
+      <div class="page-inner">
+        <div class="page-title" style="margin-bottom:1.25rem">System-Status</div>
+        <div class="metrics">
+          <div class="metric"><div class="metric-label">▶ Anfragen</div><div class="metric-value" id="m-runs">—</div></div>
+          <div class="metric"><div class="metric-label">⏳ Zu prüfen</div><div class="metric-value" id="m-appr" style="color:#c87800">—</div></div>
+          <div class="metric"><div class="metric-label">🛡 Compliance</div><div class="metric-value" style="color:#1a6b00">OK</div></div>
+          <div class="metric"><div class="metric-label">📅 EU AI Act</div><div class="metric-value" id="m-days" style="color:#c87800">—</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Datenschutz & Compliance</div>
+          <div class="comp-row"><span><span class="dot dot-ok"></span>DSGVO Art. 5 — Datensparsamkeit</span><span style="font-size:12px;color:#1a6b00">✓ aktiv</span></div>
+          <div class="comp-row"><span><span class="dot dot-ok"></span>DSGVO Art. 13 — Transparenz</span><span style="font-size:12px;color:#1a6b00">✓ aktiv</span></div>
+          <div class="comp-row"><span><span class="dot dot-ok"></span>DSGVO Art. 17 — Recht auf Löschung</span><span style="font-size:12px;color:#1a6b00">✓ aktiv</span></div>
+          <div class="comp-row"><span><span class="dot dot-ok"></span>EU AI Act Art. 52 — KI-Kennzeichnung</span><span style="font-size:12px;color:#1a6b00">✓ aktiv</span></div>
+          <div class="comp-row"><span><span class="dot dot-ok"></span>EU AI Act Art. 14 — Menschliche Aufsicht</span><span style="font-size:12px;color:#1a6b00">✓ aktiv</span></div>
+          <div class="comp-row"><span><span class="dot dot-warn"></span>Vollständige EU AI Act Pflichten</span><span style="font-size:12px;color:#c87800">⚠ 02.08.2026</span></div>
+          <div class="prog"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+          <div style="font-size:11px;color:#bbb;margin-top:6px" id="days-label"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Offene Prüfungen (Human Oversight)</div>
+          <div id="appr-list"><div class="empty">✓ Keine offenen Prüfungen</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Letzte Anfragen</div>
+          <div id="runs-list"><div class="empty">Noch keine Anfragen</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Projekt-Modal -->
+<div class="modal" id="proj-modal">
+  <div class="modal-box">
+    <div class="modal-title">Neues Projekt anlegen</div>
+    <div class="fg"><label class="fl">Projektname</label><input class="fi" id="proj-name" type="text" placeholder="z.B. Kundenkorrespondenz Q3"></div>
+    <div class="fg"><label class="fl">Beschreibung</label><textarea class="fi" id="proj-desc" rows="3" placeholder="Was soll in diesem Projekt erreicht werden?"></textarea></div>
+    <div class="fg"><label class="fl">Priorität</label>
+      <select class="fi" id="proj-prio">
+        <option>Hoch</option>
+        <option selected>Mittel</option>
+        <option>Niedrig</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Abbrechen</button>
+      <button class="btn-primary" onclick="saveProject()">Erstellen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = window.location.origin;
+
+// ── State ────────────────────────────────────────────────────────────────────
+let projects = JSON.parse(localStorage.getItem("kilisa_projects") || "[]");
+let currentSessionId = null;
+let activeSkill = null;
+
+// EU AI Act Countdown
+const deadline = new Date("2026-08-02");
+const daysLeft = Math.max(0, Math.round((deadline - new Date()) / 86400000));
+document.getElementById("m-days").textContent = daysLeft;
+document.getElementById("days-label").textContent = daysLeft + " Tage bis zur vollständigen EU AI Act Pflicht";
+document.getElementById("prog-fill").style.width = Math.min(100, Math.round((1 - daysLeft / 420) * 100)) + "%";
+
+// ── Skills ───────────────────────────────────────────────────────────────────
+const SKILLS = [
+  {id:"mail",   icon:"✉️",  name:"E-Mail schreiben",     desc:"Professionelle E-Mails verfassen",       prompt:"Bitte schreib mir eine E-Mail an "},
+  {id:"sum",    icon:"📝",  name:"Zusammenfassen",        desc:"Langen Text kurz zusammenfassen",         prompt:"Bitte fasse folgenden Text zusammen:\n\n"},
+  {id:"web",    icon:"🔍",  name:"Im Internet suchen",    desc:"Aktuelle Infos und Neuigkeiten",          prompt:"Suche nach aktuellen Informationen zu: "},
+  {id:"dsgvo",  icon:"🔒",  name:"DSGVO-Frage",           desc:"Datenschutz-Fragen schnell klären",       prompt:"Ich habe eine Datenschutz-Frage: "},
+  {id:"eu",     icon:"⚖️",  name:"EU AI Act Prüfung",     desc:"KI-Nutzung auf Compliance prüfen",        prompt:"Bitte prüfe ob folgende KI-Nutzung EU AI Act konform ist: "},
+  {id:"ueber",  icon:"🌐",  name:"Übersetzen",            desc:"Texte in andere Sprachen übersetzen",      prompt:"Bitte übersetze folgenden Text ins Englische:\n\n"},
+  {id:"check",  icon:"✅",  name:"Checkliste erstellen",  desc:"Schritt-für-Schritt Checklisten",          prompt:"Erstelle mir eine Checkliste für: "},
+  {id:"risk",   icon:"⚠️",  name:"Risiko prüfen",         desc:"Risiken analysieren und bewerten",         prompt:"Bitte analysiere die Risiken von: "},
+];
+
+function renderSkills() {
+  document.getElementById("skill-grid").innerHTML = SKILLS.map(s => `
+    <div class="skill-card ${activeSkill === s.id ? 'active-skill' : ''}" onclick="selectSkill('${s.id}','${s.prompt.replace(/'/g,"\\'")}')">
+      <div class="skill-icon">${s.icon}</div>
+      <div class="skill-name">${s.name}</div>
+      <div class="skill-desc">${s.desc}</div>
+    </div>`).join("");
+}
+
+function selectSkill(id, prompt) {
+  activeSkill = id;
+  showPage("chat", document.getElementById("nav-chat"));
+  const inp = document.getElementById("chat-input");
+  inp.value = prompt;
+  inp.focus();
+  autoResize(inp);
+}
+
+// ── Sessions / Chat ───────────────────────────────────────────────────────────
+async function ensureSession() {
+  if (currentSessionId) return currentSessionId;
+  try {
+    const r = await fetch(`${API}/sessions`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({title: "Neuer Chat"}),
+    });
+    const d = await r.json();
+    currentSessionId = d.session_id;
+    renderChatList();
+    return currentSessionId;
+  } catch {
+    return null;
+  }
+}
+
+async function newChat() {
+  currentSessionId = null;
+  document.getElementById("chat-messages").innerHTML = `
+    <div class="msg msg-ai">
+      Guten Tag! Ich bin KI-LISA, Ihr KI-Assistent. Wie kann ich Ihnen helfen?
+      <div class="msg-meta">KI-LISA · EU AI Act Art. 52 · KI-System aktiv</div>
+    </div>`;
+  document.getElementById("chat-input").value = "";
+  document.getElementById("chat-input").style.height = "auto";
+  document.getElementById("risk-badge").textContent = "Risiko: Niedrig";
+  document.getElementById("risk-badge").className = "comp-badge comp-ok";
+  document.getElementById("compliance-info").textContent = "Basis-Compliance aktiv (DSGVO Art. 5 · EU AI Act Art. 52)";
+  showPage("chat", document.getElementById("nav-chat"));
+  document.getElementById("chat-input").focus();
+}
+
+async function clearAllChats() {
+  currentSessionId = null;
+  renderChatList();
+  newChat();
+}
+
+async function renderChatList() {
+  try {
+    const r = await fetch(`${API}/sessions`);
+    const sessions = await r.json();
+    const el = document.getElementById("chat-list");
+    if (!sessions.length) {
+      el.innerHTML = '<div style="padding:4px 14px;font-size:12px;color:#ccc">Keine Chats</div>';
+      return;
+    }
+    el.innerHTML = sessions.slice(0, 8).map(s => `
+      <div class="chat-list-item" onclick="loadSession('${s.session_id}')">
+        <span>💬</span>
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.title}</span>
+      </div>`).join("");
+  } catch {
+    document.getElementById("chat-list").innerHTML =
+      '<div style="padding:4px 14px;font-size:12px;color:#ccc">Nicht verbunden</div>';
+  }
+}
+
+async function loadSession(sid) {
+  try {
+    const r = await fetch(`${API}/sessions/${sid}`);
+    const data = await r.json();
+    currentSessionId = sid;
+
+    const msgs = document.getElementById("chat-messages");
+    msgs.innerHTML = "";
+
+    for (const m of data.messages) {
+      addMsgToDOM(m.role === "user" ? "user" : "ai", m.content, m.warnings || []);
+    }
+    msgs.scrollTop = msgs.scrollHeight;
+
+    updateComplianceBar(data.compliance);
+    showPage("chat", document.getElementById("nav-chat"));
+  } catch {
+    alert("Chat konnte nicht geladen werden.");
+  }
+}
+
+function updateComplianceBar(compliance) {
+  if (!compliance) return;
+  const badge = document.getElementById("risk-badge");
+  const info = document.getElementById("compliance-info");
+
+  if (compliance.risk_level === "high") {
+    badge.textContent = "Risiko: Hoch";
+    badge.className = "comp-badge comp-high";
+  } else if (compliance.warnings && compliance.warnings.length > 0) {
+    badge.textContent = "Risiko: Mittel";
+    badge.className = "comp-badge comp-warn";
+  } else {
+    badge.textContent = "Risiko: Niedrig";
+    badge.className = "comp-badge comp-ok";
+  }
+
+  const articles = [
+    ...(compliance.dsgvo_articles || []),
+    ...(compliance.eu_ai_act_articles || []),
+  ];
+  info.textContent = articles.length > 0
+    ? "Relevante Artikel: " + articles.join(", ")
+    : "Basis-Compliance aktiv (DSGVO Art. 5 · EU AI Act Art. 52)";
+}
+
+async function sendMessage() {
+  const input = document.getElementById("chat-input");
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = "";
+  autoResize(input);
+  document.getElementById("send-btn").disabled = true;
+  addMsgToDOM("user", text);
+
+  const sid = await ensureSession();
+  if (!sid) {
+    addMsgToDOM("ai", "⚠ Backend nicht erreichbar. Bitte KI-LISA neu starten.");
+    document.getElementById("send-btn").disabled = false;
+    return;
+  }
+
+  showTyping();
+
+  try {
+    const r = await fetch(`${API}/sessions/${sid}/chat`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({session_id: sid, message: text}),
+    });
+    hideTyping();
+
+    if (!r.ok) {
+      addMsgToDOM("ai", "Es gab ein technisches Problem. Bitte versuchen Sie es erneut.");
+      document.getElementById("send-btn").disabled = false;
+      return;
+    }
+
+    const d = await r.json();
+
+    if (d.blocked) {
+      addMsgToDOM("ai", d.text, [], true);
+    } else {
+      addMsgToDOM("ai", d.text, d.warnings || []);
+      updateComplianceBar(d.compliance);
+      renderChatList();
+    }
+
+  } catch {
+    hideTyping();
+    addMsgToDOM("ai", "⚠ KI-LISA ist nicht erreichbar. Bitte prüfen Sie die Verbindung.");
+  }
+
+  document.getElementById("send-btn").disabled = false;
+}
+
+function addMsgToDOM(role, content, warnings = [], isBlock = false) {
+  const msgs = document.getElementById("chat-messages");
+  const div = document.createElement("div");
+  div.className = "msg " + (role === "user" ? "msg-user" : "msg-ai");
+
+  let html = (content || "").replace(/\n/g, "<br>").replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+
+  if (warnings && warnings.length > 0) {
+    html += warnings.map(w =>
+      `<div class="msg-warn"><span class="msg-warn-icon">⚠️</span><span>${w}</span></div>`
+    ).join("");
+  }
+
+  if (role === "ai") {
+    html += `<div class="msg-meta">KI-LISA · EU AI Act Art. 52 · ${new Date().toLocaleTimeString("de-DE", {hour:"2-digit",minute:"2-digit"})}</div>`;
+  }
+
+  div.innerHTML = html;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping() {
+  const msgs = document.getElementById("chat-messages");
+  const d = document.createElement("div");
+  d.className = "typing"; d.id = "typing";
+  d.innerHTML = "<span></span><span></span><span></span>";
+  msgs.appendChild(d);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+function hideTyping() { document.getElementById("typing")?.remove(); }
+
+function handleKey(e) {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+function autoResize(el) {
+  el.style.height = "auto";
+  el.style.height = Math.min(el.scrollHeight, 140) + "px";
+}
+
+// ── Projekte ─────────────────────────────────────────────────────────────────
+function renderProjects() {
+  const grid = document.getElementById("proj-grid");
+  if (!projects.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:#ccc;font-size:13px">Noch keine Projekte angelegt</div>';
+    return;
+  }
+  grid.innerHTML = projects.map((p, i) => `
+    <div class="proj-card">
+      <div class="proj-name">${p.name}</div>
+      <div class="proj-desc">${p.desc || "Keine Beschreibung"}</div>
+      <div class="proj-meta">
+        <span class="tag ${p.prio==='Hoch'?'tag-hoch':''}">${p.prio}</span>
+        <span class="tag">${new Date(p.created).toLocaleDateString("de-DE")}</span>
+        <button class="tag-del" onclick="deleteProject(${i})" title="Löschen">✕</button>
+      </div>
+    </div>`).join("");
+}
+
+function openNewProject() { document.getElementById("proj-modal").classList.add("open"); }
+function closeModal() { document.getElementById("proj-modal").classList.remove("open"); }
+function saveProject() {
+  const name = document.getElementById("proj-name").value.trim();
+  if (!name) return;
+  projects.push({
+    name,
+    desc: document.getElementById("proj-desc").value,
+    prio: document.getElementById("proj-prio").value,
+    created: new Date().toISOString(),
+  });
+  localStorage.setItem("kilisa_projects", JSON.stringify(projects));
+  closeModal();
+  renderProjects();
+  document.getElementById("proj-name").value = "";
+  document.getElementById("proj-desc").value = "";
+}
+function deleteProject(i) {
+  if (!confirm(`Projekt "${projects[i].name}" löschen?`)) return;
+  projects.splice(i, 1);
+  localStorage.setItem("kilisa_projects", JSON.stringify(projects));
+  renderProjects();
+}
+
+// ── Status ────────────────────────────────────────────────────────────────────
+async function loadStatus() {
+  try {
+    const [runsR, apprR] = await Promise.all([
+      fetch(`${API}/agent/runs`).then(r => r.json()),
+      fetch(`${API}/approvals`).then(r => r.json()),
+    ]);
+    const runs = Array.isArray(runsR) ? runsR : [];
+    const apprs = Array.isArray(apprR) ? apprR : [];
+
+    document.getElementById("m-runs").textContent = runs.length;
+    document.getElementById("m-appr").textContent = apprs.length;
+
+    document.getElementById("runs-list").innerHTML = !runs.length
+      ? '<div class="empty">Noch keine Anfragen</div>'
+      : runs.slice(0, 8).map(r => `
+          <div class="run-row">
+            <span style="width:8px;height:8px;border-radius:50%;background:${r.status==='completed'?'#2a7a00':'#c87800'};display:inline-block;flex-shrink:0"></span>
+            <span style="flex:1">${(r.task || "").slice(0, 70)}</span>
+            <span style="font-size:11px;color:#aaa">${r.status}</span>
+          </div>`).join("");
+
+    document.getElementById("appr-list").innerHTML = !apprs.length
+      ? '<div class="empty">✓ Keine offenen Prüfungen</div>'
+      : apprs.map(a => `
+          <div class="appr-row" id="appr-${a.id}">
+            <span style="flex:1">${a.task || "Aufgabe"}</span>
+            <span style="font-size:11px;color:#888;margin-right:4px">${a.reason || ""}</span>
+            <button class="btn-ok" onclick="approve(${a.id})">✓ Freigeben</button>
+            <button class="btn-no" onclick="reject(${a.id})">✕ Ablehnen</button>
+          </div>`).join("");
+  } catch { /* Backend nicht erreichbar */ }
+}
+
+async function approve(id) {
+  await fetch(`${API}/approvals/${id}/approve`, {method:"POST"});
+  document.getElementById(`appr-${id}`)?.remove();
+  loadStatus();
+}
+async function reject(id) {
+  await fetch(`${API}/approvals/${id}/reject`, {method:"POST"});
+  document.getElementById(`appr-${id}`)?.remove();
+  loadStatus();
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+function showPage(name, el) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".sitem").forEach(t => t.classList.remove("active"));
+  document.getElementById("page-" + name).classList.add("active");
+  if (el) el.classList.add("active");
+  if (name === "status") loadStatus();
+  if (name === "projects") renderProjects();
+  if (name === "skills") renderSkills();
+}
+
+// ── Backend-Status prüfen ─────────────────────────────────────────────────────
+async function checkStatus() {
+  const el = document.getElementById("nav-status");
+  try {
+    const r = await fetch(`${API}/health`, {signal: AbortSignal.timeout(3000)});
+    if (r.ok) {
+      const d = await r.json();
+      el.textContent = d.ki_konfiguriert ? "● System aktiv" : "● KI nicht konfiguriert";
+      el.className = "nav-status " + (d.ki_konfiguriert ? "s-ok" : "s-off");
+    } else {
+      throw new Error();
+    }
+  } catch {
+    el.textContent = "○ Nicht verbunden";
+    el.className = "nav-status s-off";
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+checkStatus();
+renderChatList();
+setInterval(checkStatus, 20000);
+</script>
+</body>
+</html>

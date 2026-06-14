@@ -1,0 +1,23 @@
+# Umgebungsvariablen — niemals committen
+apps/backend/.env
+.env
+
+# Datenbank-Dateien
+data/
+*.db
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
