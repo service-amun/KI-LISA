@@ -28,6 +28,7 @@ import agent_runtime
 import session_manager
 from audit.audit_logger import write_audit_entry, get_audit_entries
 from skills.guardrail_skill import check_input, restore_tokens
+from skills.router_skill import classify as route_query
 from routers.approvals import router as approvals_router
 
 # ── PII-Zwischenspeicher (nur Arbeitsspeicher, nie auf Disk) ─────────────────
@@ -186,23 +187,29 @@ def chat_in_session(session_id: str, body: ChatRequest, request: Request):
     # ── Schritt 3: Originalnachricht (mit PII) lokal speichern ───────────
     session_manager.add_message(session_id, "user", user_text, warnings=guard.warnings)
 
-    # ── Schritt 4: LLM-Aufruf mit tokenisiertem Text ─────────────────────
+    # ── Schritt 4: Routing + LLM-Aufruf ──────────────────────────────────
+    route = route_query(llm_text)          # Modell, Token-Budget, Temperatur
     system_prompt = session_manager.get_system_prompt(session_id, llm_text)
-    # Kontext ebenfalls tokenisieren (keine PII in Kontext-History an LLM)
-    kontext_roh = session_manager.get_context_messages(session_id, max_messages=10)
+
+    # Kontext tokenisieren — nur so viele Nachrichten wie der Router empfiehlt
+    kontext_roh = session_manager.get_context_messages(
+        session_id, max_messages=route.kontext_nachrichten + 1
+    )
     kontext_sauber = [
         {
             "role": m["role"],
             "content": _tokenisiere_kontext(m["content"], guard.token_map),
         }
-        for m in kontext_roh[:-1]  # letzte Nachricht (aktuell) weglassen
+        for m in kontext_roh[:-1]  # aktuelle Nachricht bereits als `message` übergeben
     ]
 
     response = groq_client.chat(
         message=llm_text,
         system_prompt=system_prompt,
         context=kontext_sauber,
-        model=body.model if body.model != "standard" else None,
+        model=body.model if body.model != "standard" else route.modell,
+        max_tokens=route.max_tokens,
+        temperature=route.temperature,
     )
 
     # ── Schritt 5: Tokens in Antwort durch Originaldaten ersetzen ────────

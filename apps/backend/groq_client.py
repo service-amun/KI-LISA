@@ -20,18 +20,32 @@ class LLMResponse:
 
 
 MODELS = {
-    "standard": "llama3-70b-8192",
-    "schnell": "llama3-8b-8192",
-    "alternativ": "mixtral-8x7b-32768",
+    "standard":  "llama3-70b-8192",
+    "schnell":   "llama3-8b-8192",
+    "alternativ":"mixtral-8x7b-32768",
 }
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 AI_DISCLAIMER = "\n\n---\n*KI-generiert — KI-LISA (EU AI Act Art. 52). Bitte prüfen Sie wichtige Entscheidungen.*"
 
+# Kontext-Nachrichten auf max. 700 Zeichen kürzen — spart Token, behält Kern
+_MAX_CTX_CHARS = 700
+
 
 def is_configured() -> bool:
     return bool(os.getenv("GROQ_API_KEY"))
+
+
+def _trim_context(messages: list) -> list:
+    """Kürzt lange Kontext-Nachrichten, damit keine unnötigen Token verschwendet werden."""
+    result = []
+    for m in messages:
+        content = m["content"]
+        if len(content) > _MAX_CTX_CHARS:
+            content = content[:_MAX_CTX_CHARS] + "…"
+        result.append({"role": m["role"], "content": content})
+    return result
 
 
 def chat(
@@ -39,6 +53,8 @@ def chat(
     system_prompt: str,
     context: list = None,
     model: str = None,
+    max_tokens: int = 768,
+    temperature: float = 0.55,
 ) -> LLMResponse:
     api_key = os.getenv("GROQ_API_KEY", "")
     if not api_key:
@@ -55,15 +71,15 @@ def chat(
     chosen_model = model or MODELS["standard"]
 
     messages = [{"role": "system", "content": system_prompt}]
-    for m in (context or [])[-10:]:
-        messages.append({"role": m["role"], "content": m["content"]})
+    for m in _trim_context(context or []):
+        messages.append(m)
     messages.append({"role": "user", "content": message})
 
     payload = json.dumps({
         "model": chosen_model,
         "messages": messages,
-        "max_tokens": 1024,
-        "temperature": 0.7,
+        "max_tokens": max_tokens,
+        "temperature": temperature,
     }).encode()
 
     req = urllib.request.Request(

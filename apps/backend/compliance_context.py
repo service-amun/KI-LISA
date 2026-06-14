@@ -112,13 +112,12 @@ class ComplianceContext:
 
 class ComplianceContextManager:
 
+    # Kompakter Basis-Prompt — weniger Token, gleiche Wirkung
     BASE_SYSTEM_PROMPT = (
-        "Du bist KI-LISA, ein EU-konformer KI-Assistent für Unternehmen. "
-        "Antworte immer auf Deutsch, klar und verständlich — ohne Fachjargon. "
-        "Kennzeichne dich bei jeder Antwort als KI-System (EU AI Act Art. 52). "
-        "Verarbeite personenbezogene Daten nur zweckgebunden (DSGVO Art. 5). "
-        "Bei sensiblen Entscheidungen weise auf menschliche Prüfung hin (EU AI Act Art. 14). "
-        "Treffe keine automatisierten Entscheidungen zu Kredit, Einstellung oder Medizin."
+        "Du bist KI-LISA, EU-konformer KI-Assistent für KMU. "
+        "Antworte auf Deutsch, präzise, ohne Fachjargon. "
+        "Weise dich als KI aus (EU AI Act Art. 52). "
+        "Keine automatisierten Entscheidungen zu Kredit, Einstellung oder Medizin."
     )
 
     def analyze(self, text: str) -> ComplianceContext:
@@ -154,29 +153,26 @@ class ComplianceContextManager:
 
     def build_system_prompt(self, user_message: str, session_ctx: Optional["ComplianceContext"] = None) -> tuple[str, ComplianceContext]:
         ctx = self.analyze(user_message)
-
         parts = [self.BASE_SYSTEM_PROMPT]
 
-        active_dsgvo = list(dict.fromkeys(
-            (session_ctx.dsgvo_articles if session_ctx else []) + ctx.dsgvo_articles
-        ))
-        active_eu = list(dict.fromkeys(
-            (session_ctx.eu_ai_act_articles if session_ctx else []) + ctx.eu_ai_act_articles
-        ))
+        # Nur aktuelle Nachricht für Artikel-Selektion — spart Token
+        # (Die Gesprächshistorie im Kontext liefert den Rest)
+        extra_dsgvo = [a for a in ctx.dsgvo_articles if a not in BASE_ARTICLES["dsgvo"]]
+        extra_eu    = [a for a in ctx.eu_ai_act_articles if a not in BASE_ARTICLES["eu_ai_act"]]
 
-        if active_dsgvo:
-            titles = [DSGVO_ARTICLES[a]["kurz"] for a in active_dsgvo if a in DSGVO_ARTICLES]
-            parts.append("DSGVO-Kontext: " + " | ".join(titles))
+        if extra_dsgvo:
+            kurz = [DSGVO_ARTICLES[a]["kurz"] for a in extra_dsgvo if a in DSGVO_ARTICLES]
+            parts.append("DSGVO: " + " | ".join(kurz))
 
-        if active_eu:
-            titles = [EU_AI_ACT_ARTICLES[a]["kurz"] for a in active_eu if a in EU_AI_ACT_ARTICLES]
-            parts.append("EU AI Act-Kontext: " + " | ".join(titles))
+        if extra_eu:
+            kurz = [EU_AI_ACT_ARTICLES[a]["kurz"] for a in extra_eu if a in EU_AI_ACT_ARTICLES]
+            parts.append("EU AI Act: " + " | ".join(kurz))
 
-        if ctx.requires_human_oversight:
+        # Risikoeskalation aus Session beibehalten
+        if ctx.requires_human_oversight or (session_ctx and session_ctx.requires_human_oversight):
             parts.append(
-                "WICHTIG: Diese Anfrage betrifft eine potenzielle Hochrisiko-Anwendung. "
-                "Weise den Nutzer ausdrücklich darauf hin, dass eine menschliche Fachkraft "
-                "die Entscheidung treffen oder prüfen muss."
+                "HOCHRISIKO: Weise ausdrücklich darauf hin, dass eine Fachkraft "
+                "die Entscheidung prüfen muss (EU AI Act Art. 14)."
             )
 
         return "\n\n".join(parts), ctx

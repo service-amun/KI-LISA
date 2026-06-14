@@ -163,7 +163,7 @@ def get_system_prompt(session_id: str, current_message: str) -> str:
         session_ctx = ComplianceContext(
             dsgvo_articles=session.active_dsgvo_articles,
             eu_ai_act_articles=session.active_eu_ai_act_articles,
-            accumulated_warnings=session.accumulated_warnings,
+            warnings=session.accumulated_warnings,
             risk_level=session.risk_level,
             requires_human_oversight=session.requires_human_oversight,
         )
