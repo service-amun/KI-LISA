@@ -405,5 +405,25 @@ def compliance_status():
 
 @app.post("/compliance/check")
 def compliance_check():
-    """Führt vollständigen Check durch inkl. EUR-Lex HEAD-Requests."""
+    """
+    Vollständiger Check: EUR-Lex HEAD → ggf. Volltext + LLM-Zusammenfassung
+    → RAG-Gedächtnis-Update → Bericht.
+    Kann einige Sekunden dauern wenn Gesetze sich geändert haben.
+    """
     return komplett_check()
+
+
+@app.get("/compliance/updates")
+def compliance_updates():
+    """Zeigt gespeicherte Gesetzesänderungen aus dem RAG-Gedächtnis."""
+    from skills.reflection_skill import erinnern
+    erinnerungen = erinnern("gesetzesänderung aktualisierung dsgvo eu ai act pflicht", limit=10)
+    return [
+        {
+            "inhalt": e.inhalt,
+            "wichtigkeit": e.wichtigkeit,
+            "erstellt": e.erstellt,
+        }
+        for e in erinnerungen
+        if "aktualisierung" in e.stichwörter.lower() or "gesetzesänderung" in e.stichwörter.lower()
+    ]

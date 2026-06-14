@@ -922,6 +922,15 @@ body {
         </div>
 
         <div class="karte">
+          <div class="karte-titel" style="display:flex;justify-content:space-between;align-items:center">
+            Gesetzliche Aktualisierungen (DSGVO &amp; EU AI Act)
+            <button class="btn-haupt" style="font-size:12px;padding:6px 14px"
+              onclick="gesetzCheckStarten(this)">Jetzt prüfen</button>
+          </div>
+          <div id="updates-liste"><div class="leer"><div class="leer-icon">📋</div>Noch kein Prüflauf. Klicken Sie auf „Jetzt prüfen".</div></div>
+        </div>
+
+        <div class="karte">
           <div class="karte-titel">Anfragen, die Ihre Freigabe brauchen</div>
           <div id="freigaben-liste"><div class="leer"><div class="leer-icon">✅</div>Keine Anfragen warten auf Freigabe</div></div>
         </div>
@@ -1439,6 +1448,7 @@ async function statusLaden() {
       fetch(`${API}/approvals`).then(r => r.json()),
       fetch(`${API}/compliance/status`).then(r => r.json()).catch(() => null),
     ]);
+    updatesLaden();
     const runs  = Array.isArray(runsR) ? runsR : [];
     const apprs = Array.isArray(apprR) ? apprR : [];
 
@@ -1489,6 +1499,53 @@ async function statusLaden() {
           </div>`
         ).join('');
   } catch { /* Fehler still ignorieren */ }
+}
+
+// ── Gesetzliche Updates ───────────────────────────────────────────────────
+async function gesetzCheckStarten(btn) {
+  const liste = document.getElementById('updates-liste');
+  btn.disabled = true;
+  btn.textContent = 'Prüft...';
+  liste.innerHTML = '<div class="leer"><div class="leer-icon">🔍</div>EUR-Lex wird geprüft — bitte warten...</div>';
+
+  try {
+    // POST: führt HEAD + ggf. Volltext + LLM-Zusammenfassung durch
+    await fetch(`${API}/compliance/check`, { method: 'POST' });
+    // GET: gespeicherte Aktualisierungen anzeigen
+    const r = await fetch(`${API}/compliance/updates`);
+    const updates = await r.json();
+    updatesAnzeigen(updates);
+  } catch {
+    liste.innerHTML = '<div class="leer">Prüfung konnte nicht durchgeführt werden.</div>';
+  }
+  btn.disabled = false;
+  btn.textContent = 'Jetzt prüfen';
+}
+
+async function updatesLaden() {
+  try {
+    const r = await fetch(`${API}/compliance/updates`);
+    const updates = await r.json();
+    updatesAnzeigen(updates);
+  } catch { /* still */ }
+}
+
+function updatesAnzeigen(updates) {
+  const liste = document.getElementById('updates-liste');
+  if (!Array.isArray(updates) || !updates.length) {
+    liste.innerHTML = '<div class="leer"><div class="leer-icon">✅</div>Keine Gesetzesänderungen seit dem letzten Prüflauf.</div>';
+    return;
+  }
+  liste.innerHTML = updates.map(u => {
+    const datum = u.erstellt ? new Date(u.erstellt).toLocaleDateString('de-DE') : '';
+    return `<div class="status-zeile" style="flex-direction:column;align-items:flex-start;gap:4px;padding:12px 0">
+      <div style="display:flex;gap:8px;align-items:center;width:100%">
+        <span class="status-punkt sp-warn"></span>
+        <span style="font-weight:600;font-size:13px;flex:1">${escHtml(datum)} — Gesetzesänderung erkannt</span>
+      </div>
+      <div style="font-size:13px;color:var(--grau-5);line-height:1.55;padding-left:17px">${escHtml(u.inhalt.replace(/^\[.*?\]:\s*/, ''))}</div>
+    </div>`;
+  }).join('');
 }
 
 async function freigeben(id) {

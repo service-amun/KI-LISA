@@ -55,6 +55,12 @@ def bericht() -> dict:
 
 
 def komplett_check() -> dict:
-    """Führt EUR-Lex-Prüfung durch und erstellt Bericht."""
-    eurlex_pruefen()   # HEAD-Requests zu EUR-Lex
-    return bericht()
+    """
+    Führt vollständigen Check durch:
+    1. EUR-Lex HEAD-Requests
+    2. Bei Änderung: Volltext holen + LLM-Zusammenfassung + Gedächtnis-Update
+    3. Compliance-Bericht erstellen
+    """
+    from compliance.law_updater import update_pruefen
+    law_updates = update_pruefen()   # HEAD → ggf. Volltext → ggf. RAG-Update
+    return {**bericht(), "law_updates": law_updates}

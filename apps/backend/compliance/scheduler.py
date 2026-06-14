@@ -18,10 +18,17 @@ def _check_job():
     try:
         from compliance.weekly_checker import komplett_check
         ergebnis = komplett_check()
-        if ergebnis.get("handlungsbedarf"):
-            logger.warning("COMPLIANCE ⚠ Handlungsbedarf erkannt: %s", ergebnis.get("gesetzes_aenderungen"))
+        updates = ergebnis.get("law_updates", {})
+        gespeichert = [n for n, u in updates.items() if u.get("gespeichert")]
+        if gespeichert:
+            logger.warning(
+                "COMPLIANCE ⚠ Gesetze aktualisiert und im Gedächtnis gespeichert: %s",
+                gespeichert,
+            )
+        elif ergebnis.get("handlungsbedarf"):
+            logger.warning("COMPLIANCE ⚠ Handlungsbedarf: %s", ergebnis.get("gesetzes_aenderungen"))
         else:
-            logger.info("COMPLIANCE ✓ Alle Prüfungen OK (EUR-Lex, Checkliste).")
+            logger.info("COMPLIANCE ✓ Alle Prüfungen OK — keine Änderungen.")
     except Exception as exc:
         logger.error("COMPLIANCE Fehler: %s", exc)
 
