@@ -691,6 +691,33 @@ body {
   font-weight: 500;
 }
 
+/* ── Datenschutz-Platzhalter (klickbare Chips) ─────────────────────────── */
+.platzhalter-chip {
+  display: inline;
+  background: var(--orange-h);
+  border: 1.5px dashed #e65100;
+  border-radius: 6px;
+  padding: 1px 7px;
+  font-size: .9em;
+  color: var(--orange);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .12s;
+  font-family: inherit;
+  line-height: inherit;
+  vertical-align: baseline;
+}
+.platzhalter-chip:hover { background: #ffe0b2; }
+.platzhalter-eingesetzt {
+  display: inline;
+  background: var(--gruen-h);
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: var(--gruen);
+  font-weight: 600;
+  font-size: .9em;
+}
+
 /* ── Hilfreich ─────────────────────────────────────────────────────────── */
 .verborgen { display: none !important; }
 </style>
@@ -1182,26 +1209,27 @@ async function nachrichtSenden() {
     } else {
       const d = await r.json();
 
+      const pmap = d.platzhalter || {};
       if (d.blocked) {
         // Absolut verboten (EU AI Act Art. 5) — Antwort zeigen, aber sperren
-        nachrichtAnzeigen('ki', d.text, [], 'rot');
+        nachrichtAnzeigen('ki', d.text, [], 'rot', pmap);
         complianceAktualisieren({ risk_level: 'blocked' });
         eingabeSperren('rot');
       } else if (d.compliance && d.compliance.requires_human_oversight) {
         // Hochrisiko (rot) — Antwort zeigen, Mensch muss bestätigen
-        nachrichtAnzeigen('ki', d.text, d.warnings || [], 'rot');
+        nachrichtAnzeigen('ki', d.text, d.warnings || [], 'rot', pmap);
         complianceAktualisieren(d.compliance);
         eingabeSperren('rot');
         chatListeLaden();
       } else if (d.warnings && d.warnings.length > 0) {
         // Datenschutz-Hinweis (orange) — Antwort zeigen, Mensch muss bestätigen
-        nachrichtAnzeigen('ki', d.text, d.warnings, 'orange');
+        nachrichtAnzeigen('ki', d.text, d.warnings, 'orange', pmap);
         complianceAktualisieren(d.compliance);
         eingabeSperren('orange');
         chatListeLaden();
       } else {
         // Grün — direkt weiter
-        nachrichtAnzeigen('ki', d.text);
+        nachrichtAnzeigen('ki', d.text, [], false, pmap);
         complianceAktualisieren(d.compliance);
         chatListeLaden();
         document.getElementById('senden-btn').disabled = false;
@@ -1215,16 +1243,16 @@ async function nachrichtSenden() {
 }
 
 // ── Nachrichten anzeigen ──────────────────────────────────────────────────
-// pruefung: false | 'orange' | 'rot'
-function nachrichtAnzeigen(rolle, inhalt, warnungen = [], pruefung = false) {
+// pruefung: false | 'orange' | 'rot'   platzhalter: Token→Originalwert-Map
+function nachrichtAnzeigen(rolle, inhalt, warnungen = [], pruefung = false, platzhalter = {}) {
   const container = document.getElementById('nachrichten');
   const div = document.createElement('div');
   div.className = 'msg msg-' + (rolle === 'nutzer' ? 'nutzer' : 'ki');
 
-  // Text aufbereiten
-  let html = escHtml(inhalt)
-    .replace(/\n/g, '<br>')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  // Text aufbereiten — bei KI-Antworten Platzhalter als klickbare Chips rendern
+  let html = (rolle === 'ki')
+    ? renderMitPlatzhaltern(inhalt, platzhalter)
+    : escHtml(inhalt).replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
   let blasenHtml = `<div class="msg-blase">${html}</div>`;
 
@@ -1243,10 +1271,13 @@ function nachrichtAnzeigen(rolle, inhalt, warnungen = [], pruefung = false) {
     const warnText = warnungen.length > 0
       ? escHtml(warnungen[0])
       : 'Ihre Nachricht enthält persönliche Daten. Bitte prüfen Sie, ob diese Informationen wirklich notwendig sind (DSGVO Art. 5).';
+    const hatChips = platzhalter && Object.keys(platzhalter).some(t => inhalt.includes(t));
     blasenHtml += `
       <div class="pruefung-banner orange">
         <div class="pruefung-banner-kopf"><span>⚠️</span> Datenschutz-Hinweis</div>
-        <div class="pruefung-banner-text">${warnText}</div>
+        <div class="pruefung-banner-text">${warnText}${hatChips
+          ? '<br><small style="opacity:.75">Klicken Sie auf die orangefarbenen Felder in der Antwort, um die Originaldaten wieder einzusetzen.</small>'
+          : ''}</div>
         <button class="pruefung-btn orange" onclick="eingabeFreigeben(); this.closest('.pruefung-banner').style.opacity='.5'">
           Verstanden — weiter schreiben
         </button>
@@ -1458,6 +1489,47 @@ function fristerechnen() {
     `Vollständige EU AI Act Pflichten ab 02.08.2026 — noch ${tage} Tage`;
   document.getElementById('fortschritt').style.width  =
     Math.min(100, Math.round((1 - tage / gesamt) * 100)) + '%';
+}
+
+// ── Platzhalter-Chips (Datenschutz — ein Klick setzt Original ein) ───────
+function renderMitPlatzhaltern(text, platzhalter) {
+  if (!platzhalter || !Object.keys(platzhalter).length) {
+    return escHtml(text).replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  }
+  // Längste Tokens zuerst — verhindert Teilersetzungen (z.B. [X 2] vor [X])
+  const tokens = Object.keys(platzhalter).sort((a, b) => b.length - a.length);
+  // Zerlege Text in Token-Objekte und normale Zeichenketten
+  let teile = [text];
+  for (const token of tokens) {
+    const neuTeile = [];
+    for (const teil of teile) {
+      if (typeof teil === 'string') {
+        const splits = teil.split(token);
+        for (let i = 0; i < splits.length; i++) {
+          if (splits[i]) neuTeile.push(splits[i]);
+          if (i < splits.length - 1) neuTeile.push({ token, wert: platzhalter[token] });
+        }
+      } else {
+        neuTeile.push(teil);
+      }
+    }
+    teile = neuTeile;
+  }
+  return teile.map(teil => {
+    if (typeof teil === 'string') {
+      return escHtml(teil).replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    }
+    // data-wert: Browser dekodiert HTML-Entities automatisch → dataset.wert = Originalwert ✓
+    return `<button class="platzhalter-chip" data-wert="${escHtml(teil.wert)}"
+      onclick="platzhalterEinsetzen(this)" title="Klicken zum Einsetzen">${escHtml(teil.token)}</button>`;
+  }).join('');
+}
+
+function platzhalterEinsetzen(btn) {
+  const span = document.createElement('span');
+  span.className = 'platzhalter-eingesetzt';
+  span.textContent = btn.dataset.wert;
+  btn.replaceWith(span);
 }
 
 // ── Hilfsfunktionen ───────────────────────────────────────────────────────

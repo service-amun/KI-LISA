@@ -233,7 +233,8 @@ def chat_in_session(session_id: str, body: ChatRequest, request: Request):
     })
 
     return {
-        "text": antwort_text,                   # Mit Originaldaten für den Nutzer
+        "text": response.text,                  # Mit Platzhaltern — Frontend zeigt klickbare Chips
+        "platzhalter": aktuelles_mapping,       # Token → Originalwert (für Klick-Einsetzung im Frontend)
         "model": response.model,
         "tokens_used": response.tokens_used,
         "warnings": guard.warnings,

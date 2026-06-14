@@ -3,10 +3,10 @@ KI-LISA — Compliance Guardrail
 Prüft Eingaben auf PII und verbotene Inhalte.
 
 PII-Strategie (DSGVO Art. 5 — Privacy by Design):
-  1. PII wird durch nummerierte Tokens ersetzt: [DATEN_1], [DATEN_2], ...
-  2. Das Token-Mapping wird im Sitzungs-Zwischenspeicher gehalten (nur Arbeitsspeicher)
-  3. Die KI erhält nur tokenisierten Text — keine Klardaten
-  4. Nach der Antwort werden Tokens durch die Originaldaten ersetzt
+  1. PII wird durch lesbare Platzhalter ersetzt: [E-Mail-Adresse], [Telefonnummer] ...
+  2. Das Platzhalter-Mapping wird im Sitzungs-Zwischenspeicher gehalten (nur RAM)
+  3. Die KI erhält nur den tokenisierten Text — keine Klardaten
+  4. Nach der Antwort kann der Nutzer jeden Platzhalter per Klick wieder einsetzen
   5. PII verlässt den lokalen Server nie im Klartext
 
 Warnt — blockiert nur bei wirklich verbotenen KI-Praktiken (EU AI Act Art. 5).
@@ -17,11 +17,13 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 
+# ── Lesbare Platzhalter-Namen (statt DATEN_1) ────────────────────────────────
+
 PII_PATTERNS = {
-    "E-Mail":       r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b",
-    "Telefon":      r"\b(?:\+49|0049|0)[1-9][\d\s/\-]{4,14}\b",
-    "IBAN":         r"\bDE\d{2}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{2}\b",
-    "Geburtsdatum": r"\b\d{1,2}[./]\d{1,2}[./]\d{2,4}\b",
+    "E-Mail-Adresse": r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b",
+    "Telefonnummer":  r"\b(?:\+49|0049|0)[1-9][\d/\-]{4,14}\b",
+    "Kontoverbindung":r"\bDE\d{2}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{2}\b",
+    "Geburtsdatum":   r"\b\d{1,2}[./]\d{1,2}[./]\d{2,4}\b",
 }
 
 PROHIBITED_PATTERNS = [
@@ -45,19 +47,25 @@ class GuardrailResult:
     block_reason: str = ""
     warnings: list = field(default_factory=list)
     pii_found: list = field(default_factory=list)
-    # Tokenisierter Text für den LLM-Aufruf
     sanitized_text: Optional[str] = None
-    # Mapping Token → Originalwert (nur im Arbeitsspeicher)
+    # Platzhalter → Originalwert (z.B. "[E-Mail-Adresse]" → "max@firma.de")
     token_map: dict = field(default_factory=dict)
     requires_human_oversight: bool = False
 
 
+def _make_token(pii_typ: str, zaehler: int) -> str:
+    """Erstellt lesbaren Platzhalter — mit Nummer nur wenn mehrere desselben Typs."""
+    if zaehler == 1:
+        return f"[{pii_typ}]"
+    return f"[{pii_typ} {zaehler}]"
+
+
 def check_input(text: str, existing_token_map: dict = None) -> GuardrailResult:
     """
-    Prüft Eingabe und tokenisiert PII.
+    Prüft Eingabe und tokenisiert PII mit lesbaren Platzhaltern.
 
-    existing_token_map: Token-Mapping der laufenden Session —
-    bereits bekannte PII bekommt denselben Token (Konsistenz über Nachrichten).
+    existing_token_map: Platzhalter-Mapping der laufenden Session —
+    bereits bekannte Werte bekommen denselben Platzhalter (Konsistenz).
     """
     result = GuardrailResult()
     t_lower = text.lower()
@@ -73,14 +81,18 @@ def check_input(text: str, existing_token_map: dict = None) -> GuardrailResult:
             )
             return result
 
-    # 2. PII durch Tokens ersetzen (kein Klartext an LLM)
-    # Bestehendes Mapping der Session übernehmen
+    # 2. PII durch lesbare Platzhalter ersetzen
     token_map = dict(existing_token_map) if existing_token_map else {}
-    # Umgekehrtes Mapping: Originalwert → Token (für schnelle Suche)
     reverse_map = {v: k for k, v in token_map.items()}
 
+    # Zähler pro Typ (für [E-Mail-Adresse 2] etc.)
+    typ_zaehler: dict[str, int] = {}
+    for token in token_map:
+        for pii_typ in PII_PATTERNS:
+            if token.startswith(f"[{pii_typ}"):
+                typ_zaehler[pii_typ] = typ_zaehler.get(pii_typ, 0) + 1
+
     sanitized = text
-    zaehler = len(token_map) + 1
 
     for pii_typ, pattern in PII_PATTERNS.items():
         treffer = re.findall(pattern, text, re.IGNORECASE)
@@ -90,26 +102,23 @@ def check_input(text: str, existing_token_map: dict = None) -> GuardrailResult:
         result.pii_found.append(pii_typ)
         result.warnings.append(
             f"Ihre Nachricht enthält {pii_typ}-Daten. "
-            f"Diese werden nur lokal gespeichert und nicht weitergeleitet (DSGVO Art. 5)."
+            f"Diese werden lokal durch [{pii_typ}] ersetzt und nicht weitergeleitet (DSGVO Art. 5)."
         )
 
         for wert_roh in treffer:
-            wert = wert_roh.strip()      # Leerzeichen am Rand entfernen
+            wert = wert_roh.strip()
             if not wert:
                 continue
+
             if wert in reverse_map:
-                # Bereits bekannt — gleichen Token wiederverwenden
                 token = reverse_map[wert]
             else:
-                # Neuer Wert → neuen Token anlegen
-                token = f"[DATEN_{zaehler}]"
+                typ_zaehler[pii_typ] = typ_zaehler.get(pii_typ, 0) + 1
+                token = _make_token(pii_typ, typ_zaehler[pii_typ])
                 token_map[token] = wert
                 reverse_map[wert] = token
-                zaehler += 1
 
-            # Rohen Treffer (inkl. Leerzeichen) ersetzen damit kein Rest bleibt
             sanitized = sanitized.replace(wert_roh, token)
-            # Auch gestrippte Variante ersetzen (falls Pattern kein trailing space hat)
             if wert != wert_roh:
                 sanitized = sanitized.replace(wert, token)
 
@@ -117,7 +126,7 @@ def check_input(text: str, existing_token_map: dict = None) -> GuardrailResult:
         result.sanitized_text = sanitized
         result.token_map = token_map
 
-    # 3. Hochrisiko prüfen (WARN + Human Oversight)
+    # 3. Hochrisiko prüfen
     for kw in HIGH_RISK_KEYWORDS:
         if kw in t_lower:
             result.requires_human_oversight = True
@@ -131,10 +140,7 @@ def check_input(text: str, existing_token_map: dict = None) -> GuardrailResult:
 
 
 def restore_tokens(text: str, token_map: dict) -> str:
-    """
-    Setzt nach der LLM-Antwort die Originaldaten wieder ein.
-    Die KI hat nur Tokens gesehen — der Nutzer sieht die echten Werte.
-    """
+    """Setzt nach dem LLM-Aufruf die Originaldaten wieder ein."""
     if not token_map:
         return text
     restored = text
