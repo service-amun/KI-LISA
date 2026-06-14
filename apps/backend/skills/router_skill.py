@@ -43,16 +43,10 @@ def classify(text: str) -> RouteConfig:
     t = text.lower().strip()
     woerter = len(t.split())
 
-    # 1. Kurze Grüße → 8B, schnell, wenig Tokens
-    if woerter <= 5 or _SIMPLE_RE.match(t):
-        return RouteConfig(
-            modell="llama3-8b-8192",
-            max_tokens=256,
-            temperature=0.6,
-            kontext_nachrichten=4,
-        )
+    # Compliance und Kreativ-Keywords haben Vorrang vor dem Wortzähler —
+    # "Schreib mir eine E-Mail" ist 5 Wörter, aber klar kreativ, nicht trivial.
 
-    # 2. Compliance / Rechtliches → 70B, präzise, viel Raum
+    # 1. Compliance / Rechtliches → 70B, präzise, viel Raum
     if any(kw in t for kw in _COMPLIANCE):
         return RouteConfig(
             modell="llama3-70b-8192",
@@ -61,13 +55,23 @@ def classify(text: str) -> RouteConfig:
             kontext_nachrichten=8,
         )
 
-    # 3. Kreatives Schreiben → 70B, kreativer
+    # 2. Kreatives Schreiben → 70B, kreativer
     if any(kw in t for kw in _KREATIV):
         return RouteConfig(
             modell="llama3-70b-8192",
             max_tokens=1024,
             temperature=0.72,
             kontext_nachrichten=6,
+        )
+
+    # 3. Kurze Grüße / Bestätigungen (erst jetzt, nach Keyword-Checks) → 8B
+    # <= 2 Wörter oder explizites Muster — 4-Wort-Fragen sind keine Grüße
+    if woerter <= 2 or _SIMPLE_RE.match(t):
+        return RouteConfig(
+            modell="llama3-8b-8192",
+            max_tokens=256,
+            temperature=0.6,
+            kontext_nachrichten=4,
         )
 
     # 4. Alles andere → 70B, ausgewogen
