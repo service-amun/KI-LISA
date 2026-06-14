@@ -27,8 +27,13 @@ import groq_client
 import agent_runtime
 import session_manager
 from audit.audit_logger import write_audit_entry, get_audit_entries
-from skills.guardrail_skill import check_input
+from skills.guardrail_skill import check_input, restore_tokens
 from routers.approvals import router as approvals_router
+
+# ── PII-Zwischenspeicher (nur Arbeitsspeicher, nie auf Disk) ─────────────────
+# session_id → {token: originalwert}
+# Wird gelöscht wenn Session gelöscht wird oder Server neu startet.
+_pii_zwischenspeicher: dict[str, dict] = {}
 
 # ── App ──────────────────────────────────────────────────────────────────────
 
@@ -157,8 +162,11 @@ def chat_in_session(session_id: str, body: ChatRequest, request: Request):
     if not session_manager.get_session(session_id):
         raise HTTPException(status_code=404, detail="Chat nicht gefunden.")
 
-    # Guardrail: Eingabe prüfen
-    guard = check_input(body.message)
+    # ── Schritt 1: Guardrail — PII tokenisieren ───────────────────────────
+    # Bestehendes Token-Mapping der Session übergeben (Konsistenz über Nachrichten)
+    bestehendes_mapping = _pii_zwischenspeicher.get(session_id, {})
+    guard = check_input(body.message, existing_token_map=bestehendes_mapping)
+
     if guard.blocked:
         return {
             "text": guard.block_reason,
@@ -167,46 +175,65 @@ def chat_in_session(session_id: str, body: ChatRequest, request: Request):
             "compliance": {},
         }
 
-    # Nachricht speichern + Compliance akkumulieren
-    clean_text = guard.sanitized_text or body.message
-    session_manager.add_message(session_id, "user", body.message, warnings=guard.warnings)
+    # ── Schritt 2: Neues Mapping im Zwischenspeicher ablegen ─────────────
+    if guard.token_map:
+        _pii_zwischenspeicher[session_id] = guard.token_map
 
-    # System-Prompt mit Session-Compliance-Kontext
-    system_prompt = session_manager.get_system_prompt(session_id, clean_text)
-    context = session_manager.get_context_messages(session_id, max_messages=10)
+    # Tokenisierter Text geht an LLM — Originaltext wird lokal gespeichert
+    llm_text  = guard.sanitized_text or body.message   # Token-Version für LLM
+    user_text = body.message                            # Original für Anzeige/Speicherung
 
-    # Groq-Aufruf
+    # ── Schritt 3: Originalnachricht (mit PII) lokal speichern ───────────
+    session_manager.add_message(session_id, "user", user_text, warnings=guard.warnings)
+
+    # ── Schritt 4: LLM-Aufruf mit tokenisiertem Text ─────────────────────
+    system_prompt = session_manager.get_system_prompt(session_id, llm_text)
+    # Kontext ebenfalls tokenisieren (keine PII in Kontext-History an LLM)
+    kontext_roh = session_manager.get_context_messages(session_id, max_messages=10)
+    kontext_sauber = [
+        {
+            "role": m["role"],
+            "content": _tokenisiere_kontext(m["content"], guard.token_map),
+        }
+        for m in kontext_roh[:-1]  # letzte Nachricht (aktuell) weglassen
+    ]
+
     response = groq_client.chat(
-        message=clean_text,
+        message=llm_text,
         system_prompt=system_prompt,
-        context=context[:-1],
+        context=kontext_sauber,
         model=body.model if body.model != "standard" else None,
     )
 
-    # Antwort speichern
-    session_manager.add_message(session_id, "assistant", response.text)
+    # ── Schritt 5: Tokens in Antwort durch Originaldaten ersetzen ────────
+    aktuelles_mapping = _pii_zwischenspeicher.get(session_id, {})
+    antwort_text = restore_tokens(response.text, aktuelles_mapping)
+
+    # ── Schritt 6: Wiederhergestellte Antwort speichern ──────────────────
+    session_manager.add_message(session_id, "assistant", antwort_text)
 
     # Approval anlegen wenn Human Oversight nötig
     session = session_manager.get_session(session_id)
     if session and session.requires_human_oversight:
         database.create_approval(
             run_id=0,
-            task=body.message[:200],
+            task=user_text[:200],
             reason="Hochrisiko-Anfrage erkannt (EU AI Act Art. 6, Art. 14)",
         )
 
-    # Audit-Log (DSGVO Art. 30) — keine Klardaten
+    # ── Schritt 7: Audit-Log — KEINE Klardaten, nur Metadaten ───────────
     write_audit_entry("session.chat", {
         "session_id": session_id[:8] + "...",
         "model": response.model,
         "tokens": response.tokens_used,
         "ip": request.client.host if request.client else None,
-        "pii_gefunden": guard.pii_found,
+        "pii_typen": guard.pii_found,           # Nur Typ (E-Mail, Telefon...), kein Wert
+        "pii_tokens_gesamt": len(aktuelles_mapping),
         "human_oversight": session.requires_human_oversight if session else False,
     })
 
     return {
-        "text": response.text,
+        "text": antwort_text,                   # Mit Originaldaten für den Nutzer
         "model": response.model,
         "tokens_used": response.tokens_used,
         "warnings": guard.warnings,
@@ -214,6 +241,7 @@ def chat_in_session(session_id: str, body: ChatRequest, request: Request):
         "compliance": {
             "risk_level": session.risk_level if session else "low",
             "requires_human_oversight": session.requires_human_oversight if session else False,
+            "warnings": guard.warnings,
         },
         "is_ai": True,
         "disclaimer": "KI-generiert — KI-LISA (EU AI Act Art. 52)",
@@ -224,8 +252,20 @@ def chat_in_session(session_id: str, body: ChatRequest, request: Request):
 def delete_session(session_id: str):
     """DSGVO Art. 17 — Recht auf Löschung."""
     session_manager.delete_session(session_id)
+    # PII-Zwischenspeicher für diese Session ebenfalls löschen
+    _pii_zwischenspeicher.pop(session_id, None)
     write_audit_entry("session.deleted", {"session_id": session_id[:8] + "..."})
     return {"status": "gelöscht", "hinweis": "Alle Daten dieser Session wurden entfernt (DSGVO Art. 17)."}
+
+
+def _tokenisiere_kontext(text: str, token_map: dict) -> str:
+    """Ersetzt im Kontext-Verlauf Originaldaten durch Tokens (für LLM-Aufruf)."""
+    if not token_map:
+        return text
+    result = text
+    for token, original in token_map.items():
+        result = result.replace(original, token)
+    return result
 
 
 # ── Agent (Web-Suche / URL-Abruf) ─────────────────────────────────────────────
