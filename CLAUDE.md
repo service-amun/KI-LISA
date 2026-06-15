@@ -1,7 +1,16 @@
-# KI-LISA / AILIZA — Projekt-Kontext für Claude Code
+# AILIZA — Projekt-Kontext für Claude Code
 
 > Vollständiger Kontext für KI-Assistenten zur Weiterarbeit an diesem Projekt.
-> Stand: 14.06.2026 | Version: 0.3.0 (in Entwicklung)
+> Stand: 15.06.2026 | Version: 0.3.0 (in Entwicklung)
+
+## Projekt-Identität
+
+- **Produkt:** AILIZA — EU-konformer KI-Assistent für KMU
+- **Autorin:** Karola Fromm-Nasreldin (© 2026 — Alle Rechte vorbehalten)
+- **GitHub Arbeits-Repo:** `service-amun/ki-lisa` (Claude Code Session)
+- **GitHub Persönliches Repo:** `Karo988/ailiza-agent` (Karolas eigenes Konto, Admin-Zugriff)
+- **Weitere Repos:** `Karo988/AILIZA` (belegt), `Karo988/KI-LISA` (alt), `Karo988/ailiza-policy-engine`
+- **E-Mail:** karofromm@gmail.com
 
 ---
 
