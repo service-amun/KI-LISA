@@ -341,11 +341,35 @@ web: uvicorn apps.backend.main:app --host 0.0.0.0 --port $PORT
 5. **LLM-Selector-Bar** für KMU-Modus ausblenden (zentraler Groq-Key)
 6. **Deployment** auf Railway neu aufsetzen (korrektes Repo, ENV-Vars)
 
+### Geplant (aus AILIZA-Vergleich, noch nicht eingebaut)
+
+Diese 3 Punkte wurden aus dem AILIZA-Konzept (ChatGPT, 15.06.2026) als sinnvoll bewertet
+und sollen in einer späteren Session eingebaut werden:
+
+1. **Orange-Stufe im Guardrail** (`guardrail_skill.py`)
+   - Zwischen Gelb (Warnung) und Rot (Block) eine Freigabe-Stufe einführen
+   - Orange = Admin oder verantwortliche Person muss bestätigen, bevor die Aktion ausgeführt wird
+   - Anwendungsfall: externe Versendung, Datenexport, Hochrisiko-Anfragen
+   - Umsetzung: `GuardrailResult.risk_level: "green" | "yellow" | "orange" | "red"`
+
+2. **Secret-Klasse für Passwörter/Tokens** (`guardrail_skill.py`)
+   - Eigener Erkennungstyp: Passwörter, API-Keys, Tokens (z.B. `gsk_`, `sk-`, `password=`)
+   - Verhalten: Rot blockiert + wird NICHT ins Audit-Log geschrieben (Datensparsamkeit)
+   - Umsetzung: neues Pattern `"Zugangsdaten"` mit `risk="red"` und `log=False`
+
+3. **Vault-Ablaufzeit** (`main.py`, `_pii_zwischenspeicher`)
+   - Jeder Platzhalter-Eintrag bekommt ein `expires_at` (Standard: 30 Minuten)
+   - Nach Ablauf wird der Eintrag automatisch aus dem RAM gelöscht
+   - Umsetzung: `_pii_zwischenspeicher[session_id] = {"map": token_map, "expires": time.time() + 1800}`
+   - Cleanup-Funktion bei jedem Chat-Request aufrufen
+
 ### Bewusst NICHT eingebaut (verworfen)
 
 - `llm_router.py` — Nutzer-API-Key-Eingabe widerspricht KMU-Anforderung
 - Blockierende Guardrails — ersetzt durch Warn-only Ansatz
 - Komplexer Super-Agent-Orchestrator — zu aufwändig für KMU-Fokus
+- E-Mail direkt versenden — bräuchte SMTP/Outlook-Integration, falscher Scope für MVP
+- 6-Klassen-Datensystem (AILIZA) — unsere 4 PII-Typen decken 90% der KMU-Fälle
 
 ---
 
