@@ -400,6 +400,42 @@ def ai_status():
     }
 
 
+@app.get("/ai/test")
+def ai_test():
+    """Testet Groq-Verbindung mit echtem API-Aufruf. Zeigt genauen Fehlercode."""
+    import urllib.request, urllib.error, json as _json, os as _os
+    key = _os.getenv("GROQ_API_KEY", "")
+    if not key:
+        return {"ok": False, "fehler": "GROQ_API_KEY nicht gesetzt", "tipp": "apps/backend/.env prüfen"}
+    payload = _json.dumps({
+        "model": "llama-3.1-8b-instant",
+        "messages": [{"role": "user", "content": "Antworte nur mit: OK"}],
+        "max_tokens": 10,
+    }).encode()
+    req = urllib.request.Request(
+        "https://api.groq.com/openai/v1/chat/completions",
+        data=payload,
+        headers={"Content-Type": "application/json", "Authorization": f"Bearer {key}"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            data = _json.loads(r.read())
+        return {"ok": True, "antwort": data["choices"][0]["message"]["content"], "modell": "llama-3.1-8b-instant"}
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="replace")
+        print(f"[AILIZA] /ai/test Fehler — HTTP {e.code}: {body[:300]}", flush=True)
+        tipp = {
+            401: "Ungültiger API-Key — neuen Key auf console.groq.com erstellen",
+            429: "Zu viele Anfragen — kurz warten und erneut versuchen",
+            400: "Anfragefehler — Modellname oder Parameter ungültig",
+            403: "Zugriff verweigert — Key hat keine Berechtigung",
+        }.get(e.code, "Unbekannter Fehler")
+        return {"ok": False, "http_code": e.code, "antwort": body[:300], "tipp": tipp}
+    except Exception as e:
+        print(f"[AILIZA] /ai/test Verbindungsfehler — {e}", flush=True)
+        return {"ok": False, "fehler": str(e), "tipp": "Internetverbindung prüfen"}
+
+
 # ── Compliance ────────────────────────────────────────────────────────────────
 
 @app.get("/compliance/status")

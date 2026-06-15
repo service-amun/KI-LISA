@@ -21,9 +21,9 @@ class LLMResponse:
 
 
 MODELS = {
-    "standard":  "llama3-70b-8192",
-    "schnell":   "llama3-8b-8192",
-    "alternativ":"mixtral-8x7b-32768",
+    "standard":  "llama-3.3-70b-versatile",
+    "schnell":   "llama-3.1-8b-instant",
+    "alternativ":"gemma2-9b-it",
 }
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
@@ -105,12 +105,15 @@ def chat(
 
     except urllib.error.HTTPError as e:
         body = e.read().decode("utf-8", errors="replace")
+        error_detail = f"HTTP {e.code}: {body[:300]}"
+        print(f"[AILIZA] Groq API Fehler — {error_detail}", flush=True)
         return LLMResponse(
             text="Es gab ein Problem beim Abrufen der KI-Antwort. Bitte versuchen Sie es erneut." + AI_DISCLAIMER,
             model=chosen_model,
-            error=f"HTTP {e.code}: {body[:200]}",
+            error=error_detail,
         )
     except Exception as e:
+        print(f"[AILIZA] Groq Verbindungsfehler — {e}", flush=True)
         return LLMResponse(
             text="Die KI-Antwort konnte nicht geladen werden. Bitte versuchen Sie es erneut." + AI_DISCLAIMER,
             model=chosen_model,

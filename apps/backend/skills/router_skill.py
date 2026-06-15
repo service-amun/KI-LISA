@@ -50,7 +50,7 @@ def classify(text: str) -> RouteConfig:
     # 1. Compliance / Rechtliches → 70B, präzise, viel Raum
     if any(kw in t for kw in _COMPLIANCE):
         return RouteConfig(
-            modell="llama3-70b-8192",
+            modell="llama-3.3-70b-versatile",
             max_tokens=2048,
             temperature=0.3,
             kontext_nachrichten=8,
@@ -59,7 +59,7 @@ def classify(text: str) -> RouteConfig:
     # 2. Kreatives Schreiben → 70B, kreativer
     if any(kw in t for kw in _KREATIV):
         return RouteConfig(
-            modell="llama3-70b-8192",
+            modell="llama-3.3-70b-versatile",
             max_tokens=1024,
             temperature=0.72,
             kontext_nachrichten=6,
@@ -69,7 +69,7 @@ def classify(text: str) -> RouteConfig:
     # <= 2 Wörter oder explizites Muster — 4-Wort-Fragen sind keine Grüße
     if woerter <= 2 or _SIMPLE_RE.match(t):
         return RouteConfig(
-            modell="llama3-8b-8192",
+            modell="llama-3.1-8b-instant",
             max_tokens=256,
             temperature=0.6,
             kontext_nachrichten=4,
@@ -77,7 +77,7 @@ def classify(text: str) -> RouteConfig:
 
     # 4. Alles andere → 70B, ausgewogen
     return RouteConfig(
-        modell="llama3-70b-8192",
+        modell="llama-3.3-70b-versatile",
         max_tokens=768,
         temperature=0.55,
         kontext_nachrichten=6,
