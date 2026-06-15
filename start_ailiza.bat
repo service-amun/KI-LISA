@@ -71,7 +71,7 @@ echo  ║  Zum Beenden: Strg+C oder Fenster zu   ║
 echo  ╚══════════════════════════════════════════╝
 echo.
 
-start "" cmd /c "timeout /t 3 /nobreak >nul && start \"\" \"http://127.0.0.1:%AILIZA_PORT%/dashboard\""
+start "" cmd /c "timeout /t 3 /nobreak >nul && start http://127.0.0.1:%AILIZA_PORT%/dashboard"
 
 python -m uvicorn apps.backend.main:app --port %AILIZA_PORT% --host 127.0.0.1
 
