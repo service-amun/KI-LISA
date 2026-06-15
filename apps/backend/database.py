@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-DB_PATH = Path(os.getenv("AILIZA_DB_PATH", "data/kilisa.db"))
+DB_PATH = Path(os.getenv("AILIZA_DB_PATH", "data/ailiza.db"))
 
 
 def get_conn():

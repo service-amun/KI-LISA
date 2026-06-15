@@ -1,5 +1,6 @@
+# © 2026 Karola Fromm-Nasreldin | AILIZA — Alle Rechte vorbehalten
 """
-KI-LISA — Compliance Scheduler
+AILIZA — Compliance Scheduler
 Führt EUR-Lex-Checks beim Start und wöchentlich im Hintergrund durch.
 Daemon-Thread — stoppt automatisch wenn der Server endet.
 """

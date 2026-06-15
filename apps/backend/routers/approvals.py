@@ -1,5 +1,6 @@
+# © 2026 Karola Fromm-Nasreldin | AILIZA — Alle Rechte vorbehalten
 """
-KI-LISA — Genehmigungen Router
+AILIZA — Genehmigungen Router
 Human Oversight für kritische Entscheidungen (EU AI Act Art. 14).
 """
 

@@ -152,7 +152,7 @@ def restore_tokens(text: str, token_map: dict) -> str:
 
 def check_output(text: str) -> list:
     """Prüft ob KI-Kennzeichnung vorhanden ist (EU AI Act Art. 52)."""
-    markers = ["ki-lisa", "ki-system", "ki-generiert", "künstliche intelligenz"]
+    markers = ["ailiza", "ki-system", "ki-generiert", "künstliche intelligenz"]
     if not any(m in text.lower() for m in markers):
         return ["KI-Kennzeichnung fehlt — wird automatisch hinzugefügt (EU AI Act Art. 52)."]
     return []

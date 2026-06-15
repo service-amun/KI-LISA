@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+<!-- © 2026 Karola Fromm-Nasreldin | AILIZA — Alle Rechte vorbehalten -->
 <html lang="de">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KI-LISA — Ihr KI-Assistent</title>
+<title>AILIZA — Ihr KI-Assistent</title>
 <style>
 /* ── Reset & Basis ─────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -731,7 +732,7 @@ body {
   <div class="kopf-logo">
     <div class="kopf-logo-icon">🤖</div>
     <div>
-      <div class="kopf-name">KI-LISA</div>
+      <div class="kopf-name">AILIZA</div>
       <div class="kopf-sub">EU-konformer KI-Assistent</div>
     </div>
   </div>
@@ -776,7 +777,7 @@ body {
       </div>
     </div>
 
-    <div class="seite-fuss">KI-LISA v0.3.0 · DSGVO · EU AI Act</div>
+    <div class="seite-fuss">AILIZA v0.3.0 · DSGVO · EU AI Act</div>
   </nav>
 
   <!-- INHALT -->
@@ -800,7 +801,7 @@ body {
         <div class="nachrichten" id="nachrichten">
           <div class="msg msg-ki">
             <div class="msg-blase">
-              Guten Tag! Ich bin <strong>KI-LISA</strong>, Ihr KI-Assistent. 🙂<br><br>
+              Guten Tag! Ich bin <strong>AILIZA</strong>, Ihr KI-Assistent. 🙂<br><br>
               Ich helfe Ihnen gerne bei:
               <ul style="margin:.6rem 0 .2rem 1.2rem;line-height:1.9">
                 <li>E-Mails und Texte schreiben</li>
@@ -810,7 +811,7 @@ body {
               </ul>
               Wie kann ich Ihnen helfen?
             </div>
-            <div class="msg-meta">KI-LISA · EU AI Act Art. 52 · KI-System</div>
+            <div class="msg-meta">AILIZA · EU AI Act Art. 52 · KI-System</div>
           </div>
         </div>
 
@@ -904,7 +905,7 @@ body {
             <span class="status-wert-ok">✓ Aktiv</span>
           </div>
           <div class="status-zeile">
-            <span><span class="status-punkt sp-ok"></span>KI-Kennzeichnung — KI-LISA kennzeichnet sich immer</span>
+            <span><span class="status-punkt sp-ok"></span>KI-Kennzeichnung — AILIZA kennzeichnet sich immer</span>
             <span class="status-wert-ok">✓ Aktiv</span>
           </div>
           <div class="status-zeile">
@@ -982,10 +983,11 @@ body {
 <script>
 'use strict';
 const API = window.location.origin;
+const AILIZA_AUTHOR = "© 2026 Karola Fromm-Nasreldin | AILIZA — Alle Rechte vorbehalten";
 
 // ── State ─────────────────────────────────────────────────────────────────
 let aktuelleSession = null;
-let projekte = JSON.parse(localStorage.getItem('kilisa_projekte') || '[]');
+let projekte = JSON.parse(localStorage.getItem('ailiza_projekte') || '[]');
 let aktiverSkill = null;
 
 // ── Skills ────────────────────────────────────────────────────────────────
@@ -1134,10 +1136,10 @@ async function neuerChat() {
   container.innerHTML = `
     <div class="msg msg-ki">
       <div class="msg-blase">
-        Guten Tag! Ich bin <strong>KI-LISA</strong>, Ihr KI-Assistent. 🙂<br><br>
+        Guten Tag! Ich bin <strong>AILIZA</strong>, Ihr KI-Assistent. 🙂<br><br>
         Wie kann ich Ihnen helfen?
       </div>
-      <div class="msg-meta">KI-LISA · EU AI Act Art. 52 · KI-System</div>
+      <div class="msg-meta">AILIZA · EU AI Act Art. 52 · KI-System</div>
     </div>`;
   document.getElementById('eingabe').value = '';
   document.getElementById('eingabe').style.height = 'auto';
@@ -1197,7 +1199,7 @@ async function nachrichtSenden() {
   const sid = await sessionSicherstellen();
   if (!sid) {
     tippindikatorVerstecken();
-    nachrichtAnzeigen('ki', '⚠ KI-LISA ist nicht erreichbar. Bitte neu starten.');
+    nachrichtAnzeigen('ki', '⚠ AILIZA ist nicht erreichbar. Bitte neu starten.');
     document.getElementById('senden-btn').disabled = false;
     return;
   }
@@ -1246,7 +1248,7 @@ async function nachrichtSenden() {
     }
   } catch {
     tippindikatorVerstecken();
-    nachrichtAnzeigen('ki', '⚠ Keine Verbindung zum KI-LISA System. Bitte prüfen Sie, ob KI-LISA gestartet ist.');
+    nachrichtAnzeigen('ki', '⚠ Keine Verbindung zum AILIZA System. Bitte prüfen Sie, ob AILIZA gestartet ist.');
     document.getElementById('senden-btn').disabled = false;
   }
 }
@@ -1315,7 +1317,7 @@ function nachrichtAnzeigen(rolle, inhalt, warnungen = [], pruefung = false, plat
   // KI-Disclaimer
   if (rolle === 'ki') {
     const zeit = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-    blasenHtml += `<div class="msg-meta">KI-LISA · EU AI Act Art. 52 · ${zeit}</div>`;
+    blasenHtml += `<div class="msg-meta">AILIZA · EU AI Act Art. 52 · ${zeit}</div>`;
   }
 
   div.innerHTML = blasenHtml;
@@ -1427,7 +1429,7 @@ function projektSpeichern() {
     prio: document.getElementById('pj-prio').value,
     erstellt: new Date().toISOString(),
   });
-  localStorage.setItem('kilisa_projekte', JSON.stringify(projekte));
+  localStorage.setItem('ailiza_projekte', JSON.stringify(projekte));
   projektSchliessen();
   projekteAnzeigen();
   document.getElementById('pj-name').value = '';
@@ -1436,7 +1438,7 @@ function projektSpeichern() {
 function projektLoeschen(i) {
   if (!confirm(`Projekt „${projekte[i].name}" wirklich löschen?`)) return;
   projekte.splice(i, 1);
-  localStorage.setItem('kilisa_projekte', JSON.stringify(projekte));
+  localStorage.setItem('ailiza_projekte', JSON.stringify(projekte));
   projekteAnzeigen();
 }
 
@@ -1638,5 +1640,6 @@ function escHtml(str) {
     .replace(/"/g, '&quot;');
 }
 </script>
+<div id="copyright" style="position:fixed;bottom:2px;right:8px;font-size:10px;color:#999;opacity:0.5;pointer-events:none;z-index:9999;">© 2026 Karola Fromm-Nasreldin | AILIZA</div>
 </body>
 </html>

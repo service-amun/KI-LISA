@@ -1,5 +1,6 @@
+# © 2026 Karola Fromm-Nasreldin | AILIZA — Alle Rechte vorbehalten
 """
-KI-LISA — EUR-Lex Delta-Checker
+AILIZA — EUR-Lex Delta-Checker
 Prüft via HEAD-Request ob relevante EU-Verordnungen aktualisiert wurden.
 Kein Volltext-Download — nur Last-Modified Header.
 """
@@ -40,7 +41,7 @@ def _head(url: str) -> str:
     """Holt nur den Last-Modified-Header ohne Volltext zu laden."""
     try:
         req = urllib.request.Request(url, method="HEAD",
-            headers={"User-Agent": "KI-LISA/1.0 (EU AI Act compliance check)"})
+            headers={"User-Agent": "AILIZA/1.0 (EU AI Act compliance check)"})
         with urllib.request.urlopen(req, timeout=8) as r:
             return r.headers.get("Last-Modified", "")
     except Exception:

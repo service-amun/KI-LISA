@@ -1,5 +1,6 @@
+# © 2026 Karola Fromm-Nasreldin | AILIZA — Alle Rechte vorbehalten
 """
-KI-LISA — Reflection Skill (RAG Memory)
+AILIZA — Reflection Skill (RAG Memory)
 Merkt sich wichtige Fakten aus Gesprächen und ruft sie bei neuen Anfragen ab.
 Kein Embedding nötig — keyword-basiertes SQLite-Retrieval.
 """

@@ -1,5 +1,6 @@
+# © 2026 Karola Fromm-Nasreldin | AILIZA — Alle Rechte vorbehalten
 """
-KI-LISA — Audit Logger (DSGVO Art. 30)
+AILIZA — Audit Logger (DSGVO Art. 30)
 Protokolliert alle KI-Aktionen — ohne personenbezogene Klardaten.
 """
 

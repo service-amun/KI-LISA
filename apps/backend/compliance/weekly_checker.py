@@ -1,5 +1,6 @@
+# © 2026 Karola Fromm-Nasreldin | AILIZA — Alle Rechte vorbehalten
 """
-KI-LISA — Wöchentlicher Compliance-Check
+AILIZA — Wöchentlicher Compliance-Check
 Prüft DSGVO- und EU AI Act-Konformität des Systems und ob Gesetze aktualisiert wurden.
 """
 

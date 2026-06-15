@@ -1,5 +1,6 @@
+# © 2026 Karola Fromm-Nasreldin | AILIZA — Alle Rechte vorbehalten
 """
-KI-LISA — Standard Tools Registry
+AILIZA — Standard Tools Registry
 Definiert alle verfügbaren Tools mit Metadaten.
 """
 

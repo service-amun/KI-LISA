@@ -1,5 +1,6 @@
+# © 2026 Karola Fromm-Nasreldin | AILIZA — Alle Rechte vorbehalten
 """
-KI-LISA — Law Updater
+AILIZA — Law Updater
 Wenn EUR-Lex eine Änderung meldet:
   1. Neuen Text von EUR-Lex holen (Volltext, max. 8 000 Zeichen)
   2. LLM extrahiert KMU-relevante Änderungen (400 Token, Temp 0.2)
@@ -35,7 +36,7 @@ def _text_holen(url: str) -> str:
     try:
         req = urllib.request.Request(
             url,
-            headers={"User-Agent": "KI-LISA/1.0 (EU-Compliance-Monitor, non-commercial)"},
+            headers={"User-Agent": "AILIZA/1.0 (EU-Compliance-Monitor, non-commercial)"},
         )
         with urllib.request.urlopen(req, timeout=25) as r:
             html = r.read(_ABRUF_LIMIT_HTML).decode("utf-8", errors="replace")
