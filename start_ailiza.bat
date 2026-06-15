@@ -1,10 +1,10 @@
 @echo off
 chcp 65001 >nul 2>&1
-title KI-LISA — KI-Assistent
+title AILIZA — KI-Assistent
 
 echo.
 echo  ╔══════════════════════════════════════════╗
-echo  ║  KI-LISA — EU-konformer KI-Assistent    ║
+echo  ║  AILIZA — EU-konformer KI-Assistent    ║
 echo  ║  Bitte dieses Fenster NICHT schließen!  ║
 echo  ╚══════════════════════════════════════════╝
 echo.
@@ -20,7 +20,7 @@ if errorlevel 1 (
     echo    1. Gehen Sie zu https://www.python.org/downloads/
     echo    2. Python 3.11 herunterladen und installieren
     echo    3. WICHTIG: "Add Python to PATH" ankreuzen!
-    echo    4. Dann KI-LISA erneut starten.
+    echo    4. Dann AILIZA erneut starten.
     echo.
     pause
     exit /b 1
@@ -63,7 +63,7 @@ echo  Pakete OK.
 :: ── Server starten, Browser nach 3 Sekunden öffnen ───────────────────────
 echo.
 echo  ╔══════════════════════════════════════════╗
-echo  ║  KI-LISA läuft auf:                     ║
+echo  ║  AILIZA läuft auf:                     ║
 echo  ║  http://127.0.0.1:%AILIZA_PORT%/dashboard        ║
 echo  ║                                         ║
 echo  ║  Browser öffnet sich gleich...          ║
@@ -76,5 +76,5 @@ start "" cmd /c "timeout /t 3 /nobreak >nul && start \"\" \"http://127.0.0.1:%AI
 python -m uvicorn apps.backend.main:app --port %AILIZA_PORT% --host 127.0.0.1
 
 echo.
-echo  KI-LISA wurde beendet.
+echo  AILIZA wurde beendet.
 pause
