@@ -5,12 +5,13 @@ Protokolliert alle KI-Aktionen — ohne personenbezogene Klardaten.
 
 import hashlib
 import json
+import os
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
 
-DB_PATH = Path("data/audit.db")
+DB_PATH = Path(os.getenv("AILIZA_AUDIT_DB_PATH", "data/audit.db"))
 
 
 def _get_conn():

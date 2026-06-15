@@ -31,20 +31,20 @@ for /f "tokens=2" %%v in ('python --version 2^>^&1') do echo  Python %%v gefunde
 if not exist "apps\backend\.env" (
     echo.
     echo  HINWEIS: Noch keine Einrichtung gefunden.
+    echo  Kopiere .env.example nach apps\backend\.env und trage deinen GROQ_API_KEY ein.
     echo.
-    echo  Bitte die Datei  apps\backend\.env  anlegen.
-    echo  Vorlage:  .env.example  im gleichen Ordner.
+    copy ".env.example" "apps\backend\.env" >nul 2>&1
+    echo  Vorlage wurde nach apps\backend\.env kopiert.
+    echo  Bitte dort den GROQ_API_KEY eintragen und neu starten.
     echo.
-    echo  Benötigter Eintrag:
-    echo    GROQ_API_KEY=gsk_...
-    echo    (kostenlos registrieren auf console.groq.com)
-    echo.
-    set /p WEITER="Trotzdem starten? (j/n): "
-    if /i not "%WEITER%"=="j" (
-        echo Abgebrochen.
-        pause
-        exit /b 0
-    )
+    pause
+    exit /b 0
+)
+
+:: ── Port aus .env lesen (Standard: 8001) ─────────────────────────────────
+set AILIZA_PORT=8001
+for /f "tokens=1,2 delims==" %%a in (apps\backend\.env) do (
+    if "%%a"=="AILIZA_PORT" set AILIZA_PORT=%%b
 )
 
 :: ── Pakete installieren ───────────────────────────────────────────────────
@@ -64,16 +64,16 @@ echo  Pakete OK.
 echo.
 echo  ╔══════════════════════════════════════════╗
 echo  ║  KI-LISA läuft auf:                     ║
-echo  ║  http://127.0.0.1:8001/dashboard        ║
+echo  ║  http://127.0.0.1:%AILIZA_PORT%/dashboard        ║
 echo  ║                                         ║
 echo  ║  Browser öffnet sich gleich...          ║
 echo  ║  Zum Beenden: Strg+C oder Fenster zu   ║
 echo  ╚══════════════════════════════════════════╝
 echo.
 
-start "" cmd /c "timeout /t 3 /nobreak >nul && start \"\" \"http://127.0.0.1:8001/dashboard\""
+start "" cmd /c "timeout /t 3 /nobreak >nul && start \"\" \"http://127.0.0.1:%AILIZA_PORT%/dashboard\""
 
-python -m uvicorn apps.backend.main:app --port 8001 --host 127.0.0.1
+python -m uvicorn apps.backend.main:app --port %AILIZA_PORT% --host 127.0.0.1
 
 echo.
 echo  KI-LISA wurde beendet.

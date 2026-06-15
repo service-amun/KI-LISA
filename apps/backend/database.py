@@ -4,12 +4,13 @@ SQLite für Agent-Runs und Genehmigungen.
 """
 
 import json
+import os
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
 
-DB_PATH = Path("data/kilisa.db")
+DB_PATH = Path(os.getenv("AILIZA_DB_PATH", "data/kilisa.db"))
 
 
 def get_conn():

@@ -45,10 +45,14 @@ _pii_zwischenspeicher: dict[str, dict] = {}
 
 # ── App ──────────────────────────────────────────────────────────────────────
 
+_DEBUG = os.getenv("AILIZA_DEBUG", "false").lower() == "true"
+
 app = FastAPI(
     title="KI-LISA",
     description="EU-konformer KI-Assistent für KMU — DSGVO + EU AI Act konform",
     version="0.3.0",
+    docs_url="/docs" if _DEBUG else None,
+    redoc_url=None,
 )
 
 app.add_middleware(

@@ -4,6 +4,7 @@ Merkt sich wichtige Fakten aus Gesprächen und ruft sie bei neuen Anfragen ab.
 Kein Embedding nötig — keyword-basiertes SQLite-Retrieval.
 """
 
+import os
 import re
 import sqlite3
 from dataclasses import dataclass
@@ -12,7 +13,7 @@ from pathlib import Path
 from typing import Optional
 
 
-DB_PATH = Path("data/reflection.db")
+DB_PATH = Path(os.getenv("AILIZA_MEMORY_DB_PATH", "data/reflection.db"))
 
 # Stoppwörter die beim Indexieren ignoriert werden
 _STOP = {
