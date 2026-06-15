@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<!-- © 2026 Karola Fromm-Nasreldin | AILIZA — Alle Rechte vorbehalten -->
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AILIZA — Ihr KI-Assistent</title>
+<style>
+/* ── Reset & Basis ─────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --gruen:    #2e7d32;
+  --gruen-h:  #e8f5e9;
+  --orange:   #e65100;
+  --orange-h: #fff3e0;
+  --rot:      #c62828;
+  --rot-h:    #ffebee;
+  --grau-1:   #fafafa;
+  --grau-2:   #f0f0f0;
+  --grau-3:   #e0e0e0;
+  --grau-4:   #9e9e9e;
+  --grau-5:   #424242;
+  --schwarz:  #1a1a1a;
+  --weiss:    #ffffff;
+  --radius:   14px;
+  --schatten: 0 2px 12px rgba(0,0,0,.08);
+}
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--grau-1);
+  color: var(--schwarz);
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* ── Kopfzeile ─────────────────────────────────────────────────────────── */
+.kopf {
+  background: var(--weiss);
+  border-bottom: 1px solid var(--grau-3);
+  padding: 0 1.25rem;
+  display: flex;
+  align-items: center;
+  height: 56px;
+  flex-shrink: 0;
+  gap: 12px;
+  z-index: 10;
+}
+.kopf-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.kopf-logo-icon {
+  width: 36px;
+  height: 36px;
+  background: var(--schwarz);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: white;
+  flex-shrink: 0;
+}
+.kopf-name { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+.kopf-sub  { font-size: 12px; color: var(--grau-4); margin-top: 1px; }
+.kopf-status {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 20px;
+  transition: background .3s;
+}
+.status-ok   { background: var(--gruen-h);  color: var(--gruen); }
+.status-off  { background: var(--grau-2);   color: var(--grau-4); }
+.status-warn { background: var(--orange-h); color: var(--orange); }
+.status-dot  { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+
+/* ── Haupt-Layout ──────────────────────────────────────────────────────── */
+.haupt { display: flex; flex: 1; overflow: hidden; }
+
+/* ── Seitenleiste ──────────────────────────────────────────────────────── */
+.seite {
+  width: 230px;
+  background: var(--weiss);
+  border-right: 1px solid var(--grau-3);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow-y: auto;
+}
+.nav-gruppe { padding: 16px 8px 4px; }
+.nav-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--grau-4);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  padding: 0 8px;
+  margin-bottom: 4px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--grau-5);
+  transition: background .12s;
+  user-select: none;
+}
+.nav-item:hover   { background: var(--grau-2); }
+.nav-item.aktiv   { background: var(--grau-2); color: var(--schwarz); font-weight: 600; }
+.nav-item .n-ico  { font-size: 17px; width: 22px; text-align: center; flex-shrink: 0; }
+.nav-trenn        { height: 1px; background: var(--grau-3); margin: 8px 12px; }
+.nav-chat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--grau-5);
+  transition: background .12s;
+}
+.nav-chat-item:hover { background: var(--grau-2); }
+.nav-chat-item .chat-titel {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nav-neu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--schwarz);
+  font-weight: 600;
+  transition: background .12s;
+}
+.nav-neu:hover { background: var(--grau-2); }
+.nav-loeschen {
+  padding: 7px 12px;
+  font-size: 13px;
+  color: var(--grau-4);
+  cursor: pointer;
+  border-radius: 10px;
+  transition: background .12s;
+}
+.nav-loeschen:hover { background: var(--grau-2); color: var(--rot); }
+.seite-fuss {
+  margin-top: auto;
+  padding: 12px;
+  border-top: 1px solid var(--grau-3);
+  font-size: 11px;
+  color: var(--grau-3);
+  text-align: center;
+}
+
+/* ── Inhalt ────────────────────────────────────────────────────────────── */
+.inhalt { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.seite-inhalt { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+.seite-inhalt.sichtbar { display: flex; }
+
+/* ── CHAT ──────────────────────────────────────────────────────────────── */
+.chat-compliance {
+  background: var(--weiss);
+  border-bottom: 1px solid var(--grau-3);
+  padding: 8px 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.risk-chip {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.risk-low    { background: var(--gruen-h); color: var(--gruen); }
+.risk-medium { background: var(--orange-h); color: var(--orange); }
+.risk-high   { background: var(--rot-h); color: var(--rot); }
+.compliance-text { font-size: 12px; color: var(--grau-4); }
+
+.chat-bereich {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: 820px;
+  margin: 0 auto;
+  width: 100%;
+  padding: .75rem 1.25rem;
+  min-height: 0;
+}
+.nachrichten {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: .5rem 0 .25rem;
+  min-height: 0;
+  scroll-behavior: smooth;
+}
+
+/* Nachrichten-Blasen */
+.msg {
+  max-width: 82%;
+  animation: einblenden .2s ease-out;
+}
+@keyframes einblenden {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.msg-nutzer { align-self: flex-end; }
+.msg-ki     { align-self: flex-start; }
+
+.msg-blase {
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.65;
+  word-break: break-word;
+}
+.msg-nutzer .msg-blase {
+  background: var(--schwarz);
+  color: var(--weiss);
+  border-radius: 18px 18px 4px 18px;
+}
+.msg-ki .msg-blase {
+  background: var(--weiss);
+  border: 1px solid var(--grau-3);
+  border-radius: 18px 18px 18px 4px;
+  box-shadow: var(--schatten);
+}
+.msg-meta {
+  font-size: 11px;
+  color: var(--grau-4);
+  margin-top: 5px;
+  padding: 0 4px;
+}
+.msg-nutzer .msg-meta { text-align: right; }
+
+/* Warnung in Nachricht */
+.msg-warnung {
+  margin-top: 10px;
+  background: var(--orange-h);
+  border: 1px solid #ffb74d;
+  border-radius: 10px;
+  padding: 9px 13px;
+  font-size: 13px;
+  color: #7a3a00;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.msg-warnung-icon { flex-shrink: 0; font-size: 15px; }
+
+/* Prüfungs-Banner (Orange = Hinweis, Rot = Hochrisiko) */
+.pruefung-banner {
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pruefung-banner.orange {
+  background: var(--orange-h);
+  border: 1.5px solid #ffb74d;
+}
+.pruefung-banner.rot {
+  background: var(--rot-h);
+  border: 1.5px solid #ef9a9a;
+}
+.pruefung-banner-kopf {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 700;
+  font-size: 14px;
+}
+.pruefung-banner.orange .pruefung-banner-kopf { color: #7a3a00; }
+.pruefung-banner.rot    .pruefung-banner-kopf { color: var(--rot); }
+.pruefung-banner-text { font-size: 13px; line-height: 1.55; }
+.pruefung-banner.orange .pruefung-banner-text { color: #7a3a00; }
+.pruefung-banner.rot    .pruefung-banner-text { color: #7a1f1f; }
+.pruefung-btn {
+  align-self: flex-start;
+  border: none;
+  border-radius: 9px;
+  padding: 9px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.pruefung-btn:hover { opacity: .85; }
+.pruefung-btn.orange { background: #e65100; color: #fff; }
+.pruefung-btn.rot    { background: var(--rot); color: #fff; }
+
+/* Eingabe gesperrt */
+.eingabe-gesperrt {
+  pointer-events: none;
+  opacity: .45;
+}
+.eingabe-sperre {
+  background: var(--orange-h);
+  border: 1.5px solid #ffb74d;
+  border-radius: 12px;
+  padding: 11px 16px;
+  font-size: 13px;
+  color: #7a3a00;
+  font-weight: 600;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.eingabe-sperre.rot-sperre {
+  background: var(--rot-h);
+  border-color: #ef9a9a;
+  color: #7a1f1f;
+}
+.eingabe-sperre.sichtbar { display: flex; }
+
+/* Suchergebnisse */
+.suchergebnisse {
+  margin-top: 12px;
+  border: 1px solid #c8e6c9;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.ergebnis-kopf {
+  background: var(--gruen-h);
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gruen);
+}
+.ergebnis-item { padding: 12px 14px; border-bottom: 1px solid var(--grau-3); }
+.ergebnis-item:last-child { border-bottom: none; }
+.ergebnis-titel { font-weight: 600; font-size: 13px; margin-bottom: 2px; }
+.ergebnis-url   { font-size: 11px; color: var(--gruen); margin-bottom: 5px; }
+.ergebnis-text  { font-size: 13px; color: var(--grau-5); line-height: 1.5; }
+
+/* Schreibindikator */
+.schreib-indikator {
+  align-self: flex-start;
+  background: var(--weiss);
+  border: 1px solid var(--grau-3);
+  border-radius: 18px 18px 18px 4px;
+  padding: 14px 18px;
+  display: flex;
+  gap: 5px;
+  box-shadow: var(--schatten);
+}
+.schreib-indikator span {
+  width: 7px; height: 7px;
+  background: var(--grau-4);
+  border-radius: 50%;
+  animation: tippen .9s infinite;
+}
+.schreib-indikator span:nth-child(2) { animation-delay: .15s; }
+.schreib-indikator span:nth-child(3) { animation-delay: .3s; }
+@keyframes tippen {
+  0%,60%,100% { transform: translateY(0); }
+  30%          { transform: translateY(-7px); }
+}
+
+/* Eingabe-Bereich */
+.eingabe-wrapper {
+  margin-top: 12px;
+  flex-shrink: 0;
+}
+.eingabe-feld {
+  background: var(--weiss);
+  border: 1.5px solid var(--grau-3);
+  border-radius: 16px;
+  padding: 12px 14px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  box-shadow: var(--schatten);
+  transition: border-color .15s;
+}
+.eingabe-feld:focus-within { border-color: var(--schwarz); }
+.eingabe-text {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  font-family: inherit;
+  resize: none;
+  max-height: 150px;
+  background: transparent;
+  line-height: 1.5;
+  color: var(--schwarz);
+}
+.eingabe-text::placeholder { color: var(--grau-4); }
+.senden-btn {
+  background: var(--schwarz);
+  color: var(--weiss);
+  border: none;
+  border-radius: 11px;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  font-size: 17px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity .15s, transform .1s;
+}
+.senden-btn:hover   { opacity: .85; }
+.senden-btn:active  { transform: scale(.95); }
+.senden-btn:disabled { opacity: .3; cursor: default; transform: none; }
+.eingabe-hinweis {
+  font-size: 11px;
+  color: var(--grau-4);
+  text-align: center;
+  margin-top: 6px;
+}
+
+/* ── INNENSEITEN (Projekte, Skills, Status) ────────────────────────────── */
+.seiten-scroll { flex: 1; overflow-y: auto; padding: 1.75rem; }
+.seiten-kopf {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.75rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.seiten-titel { font-size: 20px; font-weight: 700; }
+.seiten-sub   { font-size: 14px; color: var(--grau-4); margin-top: 3px; }
+.btn-haupt {
+  background: var(--schwarz);
+  color: var(--weiss);
+  border: none;
+  border-radius: 11px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity .15s;
+}
+.btn-haupt:hover { opacity: .85; }
+
+/* Skills-Karten */
+.skill-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+.skill-karte {
+  background: var(--weiss);
+  border: 1.5px solid var(--grau-3);
+  border-radius: var(--radius);
+  padding: 1.35rem;
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s, transform .1s;
+  user-select: none;
+}
+.skill-karte:hover {
+  border-color: var(--schwarz);
+  box-shadow: var(--schatten);
+  transform: translateY(-1px);
+}
+.skill-karte.gewaehlt { border-color: var(--gruen); background: var(--gruen-h); }
+.skill-icon  { font-size: 28px; margin-bottom: 10px; }
+.skill-name  { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.skill-desc  { font-size: 13px; color: var(--grau-4); line-height: 1.45; margin-bottom: 10px; }
+.skill-bsp   { font-size: 12px; color: var(--grau-4); font-style: italic; border-top: 1px solid var(--grau-3); padding-top: 8px; }
+
+/* Projekt-Karten */
+.projekt-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+.projekt-karte {
+  background: var(--weiss);
+  border: 1px solid var(--grau-3);
+  border-radius: var(--radius);
+  padding: 1.35rem;
+  transition: box-shadow .15s;
+}
+.projekt-karte:hover { box-shadow: var(--schatten); }
+.pj-name  { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.pj-desc  { font-size: 13px; color: var(--grau-5); line-height: 1.5; margin-bottom: 14px; min-height: 2.5em; }
+.pj-fuss  { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.chip {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+.chip-grau   { background: var(--grau-2); color: var(--grau-5); }
+.chip-hoch   { background: var(--rot-h);  color: var(--rot); }
+.chip-mittel { background: var(--orange-h); color: var(--orange); }
+.chip-niedrig{ background: var(--gruen-h); color: var(--gruen); }
+.pj-loeschen {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--grau-3);
+  cursor: pointer;
+  font-size: 15px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: color .1s, background .1s;
+}
+.pj-loeschen:hover { color: var(--rot); background: var(--rot-h); }
+
+/* Status-Kacheln */
+.kacheln {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.kachel {
+  background: var(--weiss);
+  border: 1px solid var(--grau-3);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.25rem;
+}
+.kachel-label { font-size: 12px; color: var(--grau-4); margin-bottom: 8px; font-weight: 500; }
+.kachel-wert  { font-size: 26px; font-weight: 700; }
+.karte {
+  background: var(--weiss);
+  border: 1px solid var(--grau-3);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+.karte-titel {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--grau-4);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  margin-bottom: 14px;
+}
+.status-zeile {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--grau-2);
+  font-size: 14px;
+  gap: 10px;
+}
+.status-zeile:last-child { border-bottom: none; }
+.status-punkt {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 9px;
+  flex-shrink: 0;
+}
+.sp-ok   { background: var(--gruen); }
+.sp-warn { background: var(--orange); }
+.sp-info { background: var(--grau-4); }
+.status-wert-ok   { font-size: 13px; color: var(--gruen); font-weight: 600; }
+.status-wert-warn { font-size: 13px; color: var(--orange); font-weight: 600; }
+.fortschritt {
+  background: var(--grau-2);
+  border-radius: 4px;
+  height: 6px;
+  margin-top: 12px;
+  overflow: hidden;
+}
+.fortschritt-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gruen), var(--orange));
+  border-radius: 4px;
+  transition: width .5s;
+}
+.freigabe-zeile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--grau-2);
+  font-size: 14px;
+}
+.freigabe-zeile:last-child { border-bottom: none; }
+.btn-freigeben {
+  background: var(--gruen-h); color: var(--gruen);
+  border: none; border-radius: 8px;
+  padding: 6px 13px; font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap;
+}
+.btn-ablehnen {
+  background: var(--rot-h); color: var(--rot);
+  border: none; border-radius: 8px;
+  padding: 6px 13px; font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; margin-left: 4px;
+}
+.leer {
+  text-align: center;
+  padding: 2.5rem;
+  color: var(--grau-4);
+  font-size: 14px;
+}
+.leer-icon { font-size: 32px; margin-bottom: 8px; }
+
+/* ── Modal ─────────────────────────────────────────────────────────────── */
+.modal-hintergrund {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 1rem;
+}
+.modal-hintergrund.offen { display: flex; }
+.modal-box {
+  background: var(--weiss);
+  border-radius: 20px;
+  padding: 1.75rem;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 10px 50px rgba(0,0,0,.15);
+  animation: modalEin .2s ease-out;
+}
+@keyframes modalEin {
+  from { opacity: 0; transform: scale(.97) translateY(6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.modal-titel { font-size: 18px; font-weight: 700; margin-bottom: 1.25rem; }
+.formular-gruppe { margin-bottom: 14px; }
+.formular-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--grau-5);
+  margin-bottom: 5px;
+}
+.formular-feld {
+  width: 100%;
+  border: 1.5px solid var(--grau-3);
+  border-radius: 10px;
+  padding: 10px 13px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  color: var(--schwarz);
+  transition: border-color .15s;
+}
+.formular-feld:focus { border-color: var(--schwarz); }
+.modal-aktionen {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 1.25rem;
+}
+.btn-abbrechen {
+  background: var(--grau-2);
+  color: var(--schwarz);
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+/* ── Datenschutz-Platzhalter (klickbare Chips) ─────────────────────────── */
+.platzhalter-chip {
+  display: inline;
+  background: var(--orange-h);
+  border: 1.5px dashed #e65100;
+  border-radius: 6px;
+  padding: 1px 7px;
+  font-size: .9em;
+  color: var(--orange);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .12s;
+  font-family: inherit;
+  line-height: inherit;
+  vertical-align: baseline;
+}
+.platzhalter-chip:hover { background: #ffe0b2; }
+.platzhalter-eingesetzt {
+  display: inline;
+  background: var(--gruen-h);
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: var(--gruen);
+  font-weight: 600;
+  font-size: .9em;
+}
+
+/* ── Hilfreich ─────────────────────────────────────────────────────────── */
+.verborgen { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- ╔══════════════════════════════════════════╗ -->
+<!-- ║               KOPFZEILE                 ║ -->
+<!-- ╚══════════════════════════════════════════╝ -->
+<header class="kopf">
+  <div class="kopf-logo">
+    <div class="kopf-logo-icon">🤖</div>
+    <div>
+      <div class="kopf-name">AILIZA</div>
+      <div class="kopf-sub">EU-konformer KI-Assistent</div>
+    </div>
+  </div>
+  <div class="kopf-status status-off" id="kopf-status">
+    <div class="status-dot"></div>
+    <span>Verbinde...</span>
+  </div>
+</header>
+
+<!-- ╔══════════════════════════════════════════╗ -->
+<!-- ║               HAUPT-LAYOUT              ║ -->
+<!-- ╚══════════════════════════════════════════╝ -->
+<div class="haupt">
+
+  <!-- SEITENLEISTE -->
+  <nav class="seite">
+    <div class="nav-gruppe">
+      <div class="nav-item aktiv" id="nav-chat" onclick="zeigSeite('chat', this)">
+        <span class="n-ico">💬</span> Chat
+      </div>
+      <div class="nav-item" id="nav-schnell" onclick="zeigSeite('schnell', this)">
+        <span class="n-ico">⚡</span> Schnellhilfe
+      </div>
+      <div class="nav-item" id="nav-projekte" onclick="zeigSeite('projekte', this)">
+        <span class="n-ico">📁</span> Projekte
+      </div>
+      <div class="nav-item" id="nav-status" onclick="zeigSeite('status', this)">
+        <span class="n-ico">🛡️</span> Datenschutz & Status
+      </div>
+    </div>
+
+    <div class="nav-trenn"></div>
+
+    <div class="nav-gruppe">
+      <div class="nav-label">Meine Chats</div>
+      <div id="chat-liste"></div>
+      <div class="nav-neu" onclick="neuerChat()">
+        <span>✏️</span> Neuer Chat
+      </div>
+      <div class="nav-loeschen" onclick="if(confirm('Alle Chats löschen?')) alleChatsLoeschen()">
+        🗑 Verlauf löschen
+      </div>
+    </div>
+
+    <div class="seite-fuss">AILIZA v0.3.0 · DSGVO · EU AI Act</div>
+  </nav>
+
+  <!-- INHALT -->
+  <main class="inhalt">
+
+    <!-- ── CHAT ───────────────────────────────────────────────────────── -->
+    <div class="seite-inhalt sichtbar" id="seite-chat">
+
+      <!-- Compliance-Leiste -->
+      <div class="chat-compliance" id="compliance-leiste">
+        <div class="risk-chip risk-low" id="risiko-chip">
+          <span>🛡️</span> Datenschutz: Aktiv
+        </div>
+        <span class="compliance-text" id="compliance-text">
+          DSGVO &amp; EU AI Act Basis-Schutz aktiv
+        </span>
+      </div>
+
+      <!-- Nachrichten -->
+      <div class="chat-bereich">
+        <div class="nachrichten" id="nachrichten">
+          <div class="msg msg-ki">
+            <div class="msg-blase">
+              Guten Tag! Ich bin <strong>AILIZA</strong>, Ihr KI-Assistent. 🙂<br><br>
+              Ich helfe Ihnen gerne bei:
+              <ul style="margin:.6rem 0 .2rem 1.2rem;line-height:1.9">
+                <li>E-Mails und Texte schreiben</li>
+                <li>Informationen suchen und zusammenfassen</li>
+                <li>Datenschutz- und Compliance-Fragen</li>
+                <li>Checklisten, Übersetzungen und mehr</li>
+              </ul>
+              Wie kann ich Ihnen helfen?
+            </div>
+            <div class="msg-meta">AILIZA · EU AI Act Art. 52 · KI-System</div>
+          </div>
+        </div>
+
+        <!-- Eingabe -->
+        <div class="eingabe-wrapper">
+          <div class="eingabe-sperre" id="eingabe-sperre">
+            <span>⚠️</span>
+            <span id="sperre-text">Bitte bestätigen Sie den Hinweis oben, bevor Sie weiterschreiben.</span>
+          </div>
+          <div class="eingabe-feld" id="eingabe-feld">
+            <textarea
+              class="eingabe-text"
+              id="eingabe"
+              rows="1"
+              placeholder="Schreiben Sie Ihre Frage hier..."
+              onkeydown="tasteDruecken(event)"
+              oninput="groessePassen(this)"
+            ></textarea>
+            <button class="senden-btn" id="senden-btn" onclick="nachrichtSenden()" title="Senden">
+              ➤
+            </button>
+          </div>
+          <div class="eingabe-hinweis">Enter = Senden &nbsp;·&nbsp; Shift + Enter = neue Zeile</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SCHNELLHILFE ───────────────────────────────────────────────── -->
+    <div class="seite-inhalt" id="seite-schnell">
+      <div class="seiten-scroll">
+        <div class="seiten-kopf">
+          <div>
+            <div class="seiten-titel">Schnellhilfe</div>
+            <div class="seiten-sub">Klicken Sie einen Bereich an — der Chat öffnet sich mit dem richtigen Einstieg</div>
+          </div>
+        </div>
+        <div class="skill-raster" id="skill-raster"></div>
+      </div>
+    </div>
+
+    <!-- ── PROJEKTE ───────────────────────────────────────────────────── -->
+    <div class="seite-inhalt" id="seite-projekte">
+      <div class="seiten-scroll">
+        <div class="seiten-kopf">
+          <div>
+            <div class="seiten-titel">Meine Projekte</div>
+            <div class="seiten-sub">Aufgaben und Themen organisieren</div>
+          </div>
+          <button class="btn-haupt" onclick="projektOeffnen()">+ Neues Projekt</button>
+        </div>
+        <div class="projekt-raster" id="projekt-raster"></div>
+      </div>
+    </div>
+
+    <!-- ── STATUS ────────────────────────────────────────────────────── -->
+    <div class="seite-inhalt" id="seite-status">
+      <div class="seiten-scroll">
+        <div class="seiten-titel" style="margin-bottom:1.25rem">Datenschutz &amp; System-Status</div>
+
+        <div class="kacheln">
+          <div class="kachel">
+            <div class="kachel-label">📋 Anfragen heute</div>
+            <div class="kachel-wert" id="k-runs">—</div>
+          </div>
+          <div class="kachel">
+            <div class="kachel-label">⏳ Warten auf Freigabe</div>
+            <div class="kachel-wert" id="k-freig" style="color:var(--orange)">—</div>
+          </div>
+          <div class="kachel">
+            <div class="kachel-label">🛡️ Datenschutz</div>
+            <div class="kachel-wert" style="color:var(--gruen)">OK</div>
+          </div>
+          <div class="kachel">
+            <div class="kachel-label">📅 EU AI Act Frist</div>
+            <div class="kachel-wert" id="k-tage" style="color:var(--orange)">—</div>
+          </div>
+        </div>
+
+        <div class="karte">
+          <div class="karte-titel">Datenschutz-Checkliste (DSGVO &amp; EU AI Act)</div>
+          <div class="status-zeile">
+            <span><span class="status-punkt sp-ok"></span>Datensparsamkeit — nur notwendige Daten</span>
+            <span class="status-wert-ok">✓ Aktiv</span>
+          </div>
+          <div class="status-zeile">
+            <span><span class="status-punkt sp-ok"></span>Transparenz — Sie wissen, was passiert</span>
+            <span class="status-wert-ok">✓ Aktiv</span>
+          </div>
+          <div class="status-zeile">
+            <span><span class="status-punkt sp-ok"></span>Recht auf Löschung — ein Klick löscht alles</span>
+            <span class="status-wert-ok">✓ Aktiv</span>
+          </div>
+          <div class="status-zeile">
+            <span><span class="status-punkt sp-ok"></span>KI-Kennzeichnung — AILIZA kennzeichnet sich immer</span>
+            <span class="status-wert-ok">✓ Aktiv</span>
+          </div>
+          <div class="status-zeile">
+            <span><span class="status-punkt sp-ok"></span>Menschliche Kontrolle bei wichtigen Entscheidungen</span>
+            <span class="status-wert-ok">✓ Aktiv</span>
+          </div>
+          <div class="status-zeile">
+            <span><span class="status-punkt sp-warn"></span>Vollständige EU AI Act Pflichten ab 02.08.2026</span>
+            <span class="status-wert-warn" id="frist-anzeige">⚠ Läuft</span>
+          </div>
+          <div class="fortschritt">
+            <div class="fortschritt-fill" id="fortschritt" style="width:0%"></div>
+          </div>
+          <div style="font-size:12px;color:var(--grau-4);margin-top:6px" id="frist-text"></div>
+        </div>
+
+        <div class="karte">
+          <div class="karte-titel" style="display:flex;justify-content:space-between;align-items:center">
+            Gesetzliche Aktualisierungen (DSGVO &amp; EU AI Act)
+            <button class="btn-haupt" style="font-size:12px;padding:6px 14px"
+              onclick="gesetzCheckStarten(this)">Jetzt prüfen</button>
+          </div>
+          <div id="updates-liste"><div class="leer"><div class="leer-icon">📋</div>Noch kein Prüflauf. Klicken Sie auf „Jetzt prüfen".</div></div>
+        </div>
+
+        <div class="karte">
+          <div class="karte-titel">Anfragen, die Ihre Freigabe brauchen</div>
+          <div id="freigaben-liste"><div class="leer"><div class="leer-icon">✅</div>Keine Anfragen warten auf Freigabe</div></div>
+        </div>
+
+        <div class="karte">
+          <div class="karte-titel">Letzte Anfragen</div>
+          <div id="runs-liste"><div class="leer"><div class="leer-icon">📭</div>Noch keine Anfragen</div></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ╔══════════════════════════════════════════╗ -->
+<!-- ║              PROJEKT-MODAL              ║ -->
+<!-- ╚══════════════════════════════════════════╝ -->
+<div class="modal-hintergrund" id="projekt-modal">
+  <div class="modal-box">
+    <div class="modal-titel">Neues Projekt anlegen</div>
+    <div class="formular-gruppe">
+      <label class="formular-label">Projektname *</label>
+      <input class="formular-feld" id="pj-name" type="text"
+        placeholder="z.B. Kundenkorrespondenz Q3">
+    </div>
+    <div class="formular-gruppe">
+      <label class="formular-label">Beschreibung (optional)</label>
+      <textarea class="formular-feld" id="pj-beschr" rows="3"
+        placeholder="Was soll in diesem Projekt erreicht werden?"></textarea>
+    </div>
+    <div class="formular-gruppe">
+      <label class="formular-label">Priorität</label>
+      <select class="formular-feld" id="pj-prio">
+        <option value="Hoch">🔴 Hoch</option>
+        <option value="Mittel" selected>🟡 Mittel</option>
+        <option value="Niedrig">🟢 Niedrig</option>
+      </select>
+    </div>
+    <div class="modal-aktionen">
+      <button class="btn-abbrechen" onclick="projektSchliessen()">Abbrechen</button>
+      <button class="btn-haupt" onclick="projektSpeichern()">Erstellen</button>
+    </div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════╗ -->
+<!-- ║               JAVASCRIPT               ║ -->
+<!-- ╚══════════════════════════════════════════╝ -->
+<script>
+'use strict';
+const API = window.location.origin;
+const AILIZA_AUTHOR = "© 2026 Karola Fromm-Nasreldin | AILIZA — Alle Rechte vorbehalten";
+
+// ── State ─────────────────────────────────────────────────────────────────
+let aktuelleSession = null;
+let projekte = JSON.parse(localStorage.getItem('ailiza_projekte') || '[]');
+let aktiverSkill = null;
+
+// ── Skills ────────────────────────────────────────────────────────────────
+const SKILLS = [
+  {
+    id: 'mail', icon: '✉️', name: 'E-Mail schreiben',
+    desc: 'Professionelle E-Mails schnell und einfach verfassen.',
+    beispiel: '„Schreib eine E-Mail an Herrn Müller wegen der Lieferverzögerung"',
+    prompt: 'Bitte schreib mir eine professionelle E-Mail. '
+  },
+  {
+    id: 'zusammenfassen', icon: '📝', name: 'Text zusammenfassen',
+    desc: 'Lange Texte, Berichte oder Dokumente kurz zusammenfassen.',
+    beispiel: '„Fasse diesen Vertrag in 5 Sätzen zusammen"',
+    prompt: 'Bitte fasse folgenden Text kurz und verständlich zusammen:\n\n'
+  },
+  {
+    id: 'suche', icon: '🔍', name: 'Im Internet suchen',
+    desc: 'Aktuelle Informationen, Nachrichten und Fakten recherchieren.',
+    beispiel: '„Was sind die aktuellen Mindestlohn-Regelungen in Deutschland?"',
+    prompt: 'Bitte suche aktuelle Informationen zu: '
+  },
+  {
+    id: 'dsgvo', icon: '🔒', name: 'Datenschutz-Frage',
+    desc: 'DSGVO-Fragen einfach und verständlich erklärt.',
+    beispiel: '„Darf ich Kundendaten für Newsletter nutzen?"',
+    prompt: 'Ich habe eine Datenschutz-Frage (DSGVO): '
+  },
+  {
+    id: 'uebersetzen', icon: '🌐', name: 'Übersetzen',
+    desc: 'Texte in andere Sprachen übersetzen — schnell und präzise.',
+    beispiel: '„Übersetze diese E-Mail ins Englische"',
+    prompt: 'Bitte übersetze folgenden Text. Zielsprache bitte angeben:\n\n'
+  },
+  {
+    id: 'checkliste', icon: '✅', name: 'Checkliste erstellen',
+    desc: 'Schritt-für-Schritt Listen für jede Aufgabe.',
+    beispiel: '„Erstelle eine Checkliste für das Mitarbeitergespräch"',
+    prompt: 'Bitte erstelle eine übersichtliche Checkliste für: '
+  },
+  {
+    id: 'eu-ai', icon: '⚖️', name: 'KI-Nutzung prüfen',
+    desc: 'Ist Ihr KI-Einsatz EU AI Act konform? Schneller Check.',
+    beispiel: '„Darf ich KI für die Bewerber-Vorauswahl nutzen?"',
+    prompt: 'Bitte prüfe, ob folgender KI-Einsatz EU AI Act konform ist: '
+  },
+  {
+    id: 'risiko', icon: '⚠️', name: 'Risiken bewerten',
+    desc: 'Risiken in Projekten und Prozessen erkennen und bewerten.',
+    beispiel: '„Welche Risiken hat die Einführung eines neuen CRM-Systems?"',
+    prompt: 'Bitte analysiere die wichtigsten Risiken von: '
+  },
+];
+
+// ── Init ──────────────────────────────────────────────────────────────────
+statusPruefen();
+chatListeLaden();
+fristerechnen();
+setInterval(statusPruefen, 20000);
+
+// ── Navigation ────────────────────────────────────────────────────────────
+function zeigSeite(name, el) {
+  document.querySelectorAll('.seite-inhalt').forEach(s => s.classList.remove('sichtbar'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('aktiv'));
+  document.getElementById('seite-' + name).classList.add('sichtbar');
+  if (el) el.classList.add('aktiv');
+  if (name === 'schnell') skillsAnzeigen();
+  if (name === 'projekte') projekteAnzeigen();
+  if (name === 'status') statusLaden();
+}
+
+// ── Status prüfen ─────────────────────────────────────────────────────────
+async function statusPruefen() {
+  const el = document.getElementById('kopf-status');
+  try {
+    const r = await fetch(`${API}/health`, { signal: AbortSignal.timeout(3000) });
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    el.className = 'kopf-status ' + (d.ki_konfiguriert ? 'status-ok' : 'status-warn');
+    el.innerHTML = `<div class="status-dot"></div><span>${
+      d.ki_konfiguriert ? 'System bereit' : 'KI nicht eingerichtet'
+    }</span>`;
+  } catch {
+    el.className = 'kopf-status status-off';
+    el.innerHTML = '<div class="status-dot"></div><span>Nicht verbunden</span>';
+  }
+}
+
+// ── Sessions / Chat ───────────────────────────────────────────────────────
+async function sessionSicherstellen() {
+  if (aktuelleSession) return aktuelleSession;
+  try {
+    const r = await fetch(`${API}/sessions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: 'Neuer Chat' }),
+    });
+    const d = await r.json();
+    aktuelleSession = d.session_id;
+    chatListeLaden();
+    return aktuelleSession;
+  } catch { return null; }
+}
+
+async function chatListeLaden() {
+  try {
+    const r = await fetch(`${API}/sessions`);
+    const sessions = await r.json();
+    const el = document.getElementById('chat-liste');
+    if (!Array.isArray(sessions) || !sessions.length) {
+      el.innerHTML = '<div style="padding:4px 12px;font-size:12px;color:var(--grau-4)">Noch keine Chats</div>';
+      return;
+    }
+    el.innerHTML = sessions.slice(0, 10).map(s =>
+      `<div class="nav-chat-item" onclick="sessionLaden('${s.session_id}')">
+        <span>💬</span>
+        <span class="chat-titel">${escHtml(s.title)}</span>
+      </div>`
+    ).join('');
+  } catch {
+    document.getElementById('chat-liste').innerHTML =
+      '<div style="padding:4px 12px;font-size:12px;color:var(--grau-4)">Nicht verbunden</div>';
+  }
+}
+
+async function sessionLaden(sid) {
+  try {
+    const r = await fetch(`${API}/sessions/${sid}`);
+    const data = await r.json();
+    aktuelleSession = sid;
+
+    const container = document.getElementById('nachrichten');
+    container.innerHTML = '';
+    for (const m of data.messages) {
+      nachrichtAnzeigen(m.role === 'user' ? 'nutzer' : 'ki', m.content, m.warnings || []);
+    }
+    container.scrollTop = container.scrollHeight;
+    complianceAktualisieren(data.compliance);
+    zeigSeite('chat', document.getElementById('nav-chat'));
+  } catch { alert('Chat konnte nicht geladen werden.'); }
+}
+
+async function neuerChat() {
+  aktuelleSession = null;
+  const container = document.getElementById('nachrichten');
+  container.innerHTML = `
+    <div class="msg msg-ki">
+      <div class="msg-blase">
+        Guten Tag! Ich bin <strong>AILIZA</strong>, Ihr KI-Assistent. 🙂<br><br>
+        Wie kann ich Ihnen helfen?
+      </div>
+      <div class="msg-meta">AILIZA · EU AI Act Art. 52 · KI-System</div>
+    </div>`;
+  document.getElementById('eingabe').value = '';
+  document.getElementById('eingabe').style.height = 'auto';
+  risikoZuruecksetzen();
+  eingabeFreigeben();
+  zeigSeite('chat', document.getElementById('nav-chat'));
+  document.getElementById('eingabe').focus();
+}
+
+async function alleChatsLoeschen() {
+  aktuelleSession = null;
+  chatListeLaden();
+  neuerChat();
+}
+
+// ── Eingabe sperren / freigeben ───────────────────────────────────────────
+let eingabeSperreAktiv = false;
+
+function eingabeSperren(typ) {
+  // typ: 'orange' (Hinweis) oder 'rot' (Hochrisiko)
+  eingabeSperreAktiv = true;
+  const sperre = document.getElementById('eingabe-sperre');
+  const feld   = document.getElementById('eingabe-feld');
+  const text   = document.getElementById('sperre-text');
+
+  sperre.className = 'eingabe-sperre sichtbar' + (typ === 'rot' ? ' rot-sperre' : '');
+  text.textContent = typ === 'rot'
+    ? 'Hochrisiko erkannt — bitte bestätigen Sie oben, dass Sie die Einschränkung gelesen haben.'
+    : 'Bitte bestätigen Sie den Datenschutz-Hinweis oben, bevor Sie weiterschreiben.';
+  feld.classList.add('eingabe-gesperrt');
+  document.getElementById('eingabe').disabled = true;
+  document.getElementById('senden-btn').disabled = true;
+}
+
+function eingabeFreigeben() {
+  eingabeSperreAktiv = false;
+  document.getElementById('eingabe-sperre').className = 'eingabe-sperre';
+  document.getElementById('eingabe-feld').classList.remove('eingabe-gesperrt');
+  document.getElementById('eingabe').disabled = false;
+  document.getElementById('senden-btn').disabled = false;
+  document.getElementById('eingabe').focus();
+}
+
+// ── Nachricht senden ──────────────────────────────────────────────────────
+async function nachrichtSenden() {
+  if (eingabeSperreAktiv) return;
+
+  const eingabe = document.getElementById('eingabe');
+  const text = eingabe.value.trim();
+  if (!text) return;
+
+  eingabe.value = '';
+  groessePassen(eingabe);
+  document.getElementById('senden-btn').disabled = true;
+  nachrichtAnzeigen('nutzer', text);
+
+  const sid = await sessionSicherstellen();
+  if (!sid) {
+    tippindikatorVerstecken();
+    nachrichtAnzeigen('ki', '⚠ AILIZA ist nicht erreichbar. Bitte neu starten.');
+    document.getElementById('senden-btn').disabled = false;
+    return;
+  }
+
+  tippindikatorZeigen();
+
+  try {
+    const r = await fetch(`${API}/sessions/${sid}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sid, message: text }),
+    });
+    tippindikatorVerstecken();
+
+    if (!r.ok) {
+      nachrichtAnzeigen('ki', 'Es gab ein technisches Problem. Bitte versuchen Sie es erneut.');
+      document.getElementById('senden-btn').disabled = false;
+    } else {
+      const d = await r.json();
+
+      const pmap = d.platzhalter || {};
+      if (d.blocked) {
+        // Absolut verboten (EU AI Act Art. 5) — Antwort zeigen, aber sperren
+        nachrichtAnzeigen('ki', d.text, [], 'rot', pmap);
+        complianceAktualisieren({ risk_level: 'blocked' });
+        eingabeSperren('rot');
+      } else if (d.compliance && d.compliance.requires_human_oversight) {
+        // Hochrisiko (rot) — Antwort zeigen, Mensch muss bestätigen
+        nachrichtAnzeigen('ki', d.text, d.warnings || [], 'rot', pmap);
+        complianceAktualisieren(d.compliance);
+        eingabeSperren('rot');
+        chatListeLaden();
+      } else if (d.warnings && d.warnings.length > 0) {
+        // Datenschutz-Hinweis (orange) — Antwort zeigen, Mensch muss bestätigen
+        nachrichtAnzeigen('ki', d.text, d.warnings, 'orange', pmap);
+        complianceAktualisieren(d.compliance);
+        eingabeSperren('orange');
+        chatListeLaden();
+      } else {
+        // Grün — direkt weiter
+        nachrichtAnzeigen('ki', d.text, [], false, pmap);
+        complianceAktualisieren(d.compliance);
+        chatListeLaden();
+        document.getElementById('senden-btn').disabled = false;
+      }
+    }
+  } catch {
+    tippindikatorVerstecken();
+    nachrichtAnzeigen('ki', '⚠ Keine Verbindung zum AILIZA System. Bitte prüfen Sie, ob AILIZA gestartet ist.');
+    document.getElementById('senden-btn').disabled = false;
+  }
+}
+
+// ── Nachrichten anzeigen ──────────────────────────────────────────────────
+// pruefung: false | 'orange' | 'rot'   platzhalter: Token→Originalwert-Map
+function nachrichtAnzeigen(rolle, inhalt, warnungen = [], pruefung = false, platzhalter = {}) {
+  const container = document.getElementById('nachrichten');
+  const div = document.createElement('div');
+  div.className = 'msg msg-' + (rolle === 'nutzer' ? 'nutzer' : 'ki');
+
+  // Text aufbereiten — bei KI-Antworten Platzhalter als klickbare Chips rendern
+  let html = (rolle === 'ki')
+    ? renderMitPlatzhaltern(inhalt, platzhalter)
+    : escHtml(inhalt).replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+  let blasenHtml = `<div class="msg-blase">${html}</div>`;
+
+  // Einfache Hinweis-Warnungen (nur wenn kein Prüfungs-Banner folgt)
+  if (warnungen && warnungen.length > 0 && !pruefung) {
+    blasenHtml += warnungen.map(w =>
+      `<div class="msg-warnung">
+        <span class="msg-warnung-icon">⚠️</span>
+        <span>${escHtml(w)}</span>
+      </div>`
+    ).join('');
+  }
+
+  // Prüfungs-Banner (Orange oder Rot) — Mensch muss bestätigen
+  if (pruefung === 'orange') {
+    const warnText = warnungen.length > 0
+      ? escHtml(warnungen[0])
+      : 'Ihre Nachricht enthält persönliche Daten. Bitte prüfen Sie, ob diese Informationen wirklich notwendig sind (DSGVO Art. 5).';
+    const hatChips = platzhalter && Object.keys(platzhalter).some(t => inhalt.includes(t));
+    blasenHtml += `
+      <div class="pruefung-banner orange">
+        <div class="pruefung-banner-kopf"><span>⚠️</span> Datenschutz-Hinweis</div>
+        <div class="pruefung-banner-text">${warnText}${hatChips
+          ? '<br><small style="opacity:.8">Klicken Sie auf die <strong>orangefarbenen Felder</strong> in der Antwort, um die Originaldaten einzusetzen.</small>'
+          : ''}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${hatChips ? `<button class="pruefung-btn orange" onclick="alleEinsetzen(this)">
+            Alle einsetzen &amp; weiter
+          </button>` : ''}
+          <button class="pruefung-btn orange" style="background:transparent;color:var(--orange);border:1.5px solid var(--orange)"
+            onclick="eingabeFreigeben(); this.closest('.pruefung-banner').style.opacity='.5'">
+            Verstanden — weiter
+          </button>
+        </div>
+      </div>`;
+  } else if (pruefung === 'rot') {
+    blasenHtml += `
+      <div class="pruefung-banner rot">
+        <div class="pruefung-banner-kopf"><span>🔴</span> Menschliche Prüfung erforderlich</div>
+        <div class="pruefung-banner-text">
+          Diese Anfrage betrifft eine Entscheidung mit hohem Risiko (EU AI Act Art. 6 &amp; Art. 14).<br>
+          <strong>Die KI-Antwort darf nicht automatisch verwendet werden.</strong><br>
+          Bitte lassen Sie das Ergebnis von einer zuständigen Fachkraft prüfen und bestätigen Sie dann.
+        </div>
+        <button class="pruefung-btn rot" onclick="eingabeFreigeben(); this.closest('.pruefung-banner').style.opacity='.5'">
+          Ich habe die Antwort geprüft — weiter
+        </button>
+      </div>`;
+  }
+
+  // KI-Disclaimer
+  if (rolle === 'ki') {
+    const zeit = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    blasenHtml += `<div class="msg-meta">AILIZA · EU AI Act Art. 52 · ${zeit}</div>`;
+  }
+
+  div.innerHTML = blasenHtml;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+// ── Tipp-Indikator ────────────────────────────────────────────────────────
+function tippindikatorZeigen() {
+  const container = document.getElementById('nachrichten');
+  const d = document.createElement('div');
+  d.className = 'schreib-indikator';
+  d.id = 'tipp';
+  d.innerHTML = '<span></span><span></span><span></span>';
+  container.appendChild(d);
+  container.scrollTop = container.scrollHeight;
+}
+function tippindikatorVerstecken() { document.getElementById('tipp')?.remove(); }
+
+// ── Compliance-Anzeige ────────────────────────────────────────────────────
+function complianceAktualisieren(compliance) {
+  if (!compliance) return;
+  const chip = document.getElementById('risiko-chip');
+  const text = document.getElementById('compliance-text');
+
+  if (compliance.risk_level === 'blocked') {
+    chip.className = 'risk-chip risk-high';
+    chip.innerHTML = '<span>🚫</span> Anfrage nicht erlaubt';
+    text.textContent = 'Verbotene KI-Praxis erkannt (EU AI Act Art. 5) — Bestätigung erforderlich';
+  } else if (compliance.risk_level === 'high' || compliance.requires_human_oversight) {
+    chip.className = 'risk-chip risk-high';
+    chip.innerHTML = '<span>🔴</span> Menschliche Prüfung nötig';
+    text.textContent = 'Hochrisiko-Entscheidung — bitte Fachkraft hinzuziehen (EU AI Act Art. 14)';
+  } else if (compliance.warnings && compliance.warnings.length > 0) {
+    chip.className = 'risk-chip risk-medium';
+    chip.innerHTML = '<span>⚠️</span> Datenschutz-Hinweis';
+    text.textContent = 'Persönliche Daten erkannt — Bestätigung erforderlich (DSGVO Art. 5)';
+  } else {
+    risikoZuruecksetzen();
+  }
+}
+
+function risikoZuruecksetzen() {
+  document.getElementById('risiko-chip').className = 'risk-chip risk-low';
+  document.getElementById('risiko-chip').innerHTML = '<span>🛡️</span> Datenschutz: Aktiv';
+  document.getElementById('compliance-text').textContent = 'DSGVO & EU AI Act Basis-Schutz aktiv';
+}
+
+// ── Skills ────────────────────────────────────────────────────────────────
+function skillsAnzeigen() {
+  document.getElementById('skill-raster').innerHTML = SKILLS.map(s =>
+    `<div class="skill-karte ${aktiverSkill === s.id ? 'gewaehlt' : ''}"
+      onclick="skillWaehlen('${s.id}', ${JSON.stringify(s.prompt)})">
+      <div class="skill-icon">${s.icon}</div>
+      <div class="skill-name">${s.name}</div>
+      <div class="skill-desc">${s.desc}</div>
+      <div class="skill-bsp">${s.beispiel}</div>
+    </div>`
+  ).join('');
+}
+
+function skillWaehlen(id, prompt) {
+  aktiverSkill = id;
+  zeigSeite('chat', document.getElementById('nav-chat'));
+  const eingabe = document.getElementById('eingabe');
+  eingabe.value = prompt;
+  eingabe.focus();
+  groessePassen(eingabe);
+  // Cursor ans Ende
+  eingabe.setSelectionRange(eingabe.value.length, eingabe.value.length);
+}
+
+// ── Projekte ──────────────────────────────────────────────────────────────
+function projekteAnzeigen() {
+  const raster = document.getElementById('projekt-raster');
+  if (!projekte.length) {
+    raster.innerHTML = `
+      <div style="grid-column:1/-1">
+        <div class="leer">
+          <div class="leer-icon">📁</div>
+          Noch keine Projekte. Klicken Sie auf „+ Neues Projekt".
+        </div>
+      </div>`;
+    return;
+  }
+  raster.innerHTML = projekte.map((p, i) => {
+    const chipKlasse = p.prio === 'Hoch' ? 'chip-hoch' : p.prio === 'Mittel' ? 'chip-mittel' : 'chip-niedrig';
+    return `
+      <div class="projekt-karte">
+        <div class="pj-name">${escHtml(p.name)}</div>
+        <div class="pj-desc">${escHtml(p.beschr || 'Keine Beschreibung')}</div>
+        <div class="pj-fuss">
+          <span class="chip ${chipKlasse}">${p.prio}</span>
+          <span class="chip chip-grau">${new Date(p.erstellt).toLocaleDateString('de-DE')}</span>
+          <button class="pj-loeschen" onclick="projektLoeschen(${i})" title="Projekt löschen">🗑</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function projektOeffnen() { document.getElementById('projekt-modal').classList.add('offen'); }
+function projektSchliessen() { document.getElementById('projekt-modal').classList.remove('offen'); }
+function projektSpeichern() {
+  const name = document.getElementById('pj-name').value.trim();
+  if (!name) { document.getElementById('pj-name').focus(); return; }
+  projekte.push({
+    name,
+    beschr: document.getElementById('pj-beschr').value.trim(),
+    prio: document.getElementById('pj-prio').value,
+    erstellt: new Date().toISOString(),
+  });
+  localStorage.setItem('ailiza_projekte', JSON.stringify(projekte));
+  projektSchliessen();
+  projekteAnzeigen();
+  document.getElementById('pj-name').value = '';
+  document.getElementById('pj-beschr').value = '';
+}
+function projektLoeschen(i) {
+  if (!confirm(`Projekt „${projekte[i].name}" wirklich löschen?`)) return;
+  projekte.splice(i, 1);
+  localStorage.setItem('ailiza_projekte', JSON.stringify(projekte));
+  projekteAnzeigen();
+}
+
+// ── Status-Seite ──────────────────────────────────────────────────────────
+async function statusLaden() {
+  try {
+    const [runsR, apprR, complR] = await Promise.all([
+      fetch(`${API}/agent/runs`).then(r => r.json()),
+      fetch(`${API}/approvals`).then(r => r.json()),
+      fetch(`${API}/compliance/status`).then(r => r.json()).catch(() => null),
+    ]);
+    updatesLaden();
+    const runs  = Array.isArray(runsR) ? runsR : [];
+    const apprs = Array.isArray(apprR) ? apprR : [];
+
+    // Compliance-Frist aus Backend
+    if (complR && complR.frist) {
+      const tage = complR.frist.tage_verbleibend;
+      document.getElementById('k-tage').textContent = tage + ' Tage';
+      document.getElementById('frist-anzeige').textContent = tage > 0 ? `⚠ Noch ${tage} Tage` : '✓ Frist abgelaufen';
+      document.getElementById('frist-text').textContent = `Vollständige EU AI Act Pflichten ab ${complR.frist.datum} — noch ${tage} Tage`;
+      const gesamt = 420;
+      document.getElementById('fortschritt').style.width = Math.min(100, Math.round((1 - tage / gesamt) * 100)) + '%';
+    }
+
+    // EUR-Lex Änderungen
+    if (complR && complR.gesetzes_aenderungen && complR.gesetzes_aenderungen.length > 0) {
+      const chip = document.getElementById('risiko-chip');
+      chip.className = 'risk-chip risk-medium';
+      chip.innerHTML = `<span>⚠️</span> Gesetzesänderung erkannt`;
+      document.getElementById('compliance-text').textContent =
+        `Bitte prüfen: ${complR.gesetzes_aenderungen.join(', ')} wurde aktualisiert`;
+    }
+
+    document.getElementById('k-runs').textContent  = runs.length;
+    document.getElementById('k-freig').textContent = apprs.length;
+
+    // Freigaben
+    document.getElementById('freigaben-liste').innerHTML = !apprs.length
+      ? '<div class="leer"><div class="leer-icon">✅</div>Keine Anfragen warten auf Freigabe</div>'
+      : apprs.map(a =>
+          `<div class="freigabe-zeile" id="fr-${a.id}">
+            <span style="flex:1">${escHtml(a.task || 'Aufgabe')}</span>
+            <span style="font-size:12px;color:var(--grau-4);margin-right:4px">${escHtml(a.reason || '')}</span>
+            <button class="btn-freigeben" onclick="freigeben(${a.id})">✓ Freigeben</button>
+            <button class="btn-ablehnen"  onclick="ablehnen(${a.id})">✕ Ablehnen</button>
+          </div>`
+        ).join('');
+
+    // Letzte Runs
+    document.getElementById('runs-liste').innerHTML = !runs.length
+      ? '<div class="leer"><div class="leer-icon">📭</div>Noch keine Anfragen</div>'
+      : runs.slice(0, 8).map(r =>
+          `<div class="status-zeile">
+            <span>
+              <span class="status-punkt ${r.status === 'completed' ? 'sp-ok' : 'sp-warn'}"></span>
+              ${escHtml((r.task || '').slice(0, 80))}
+            </span>
+            <span style="font-size:12px;color:var(--grau-4)">${escHtml(r.status)}</span>
+          </div>`
+        ).join('');
+  } catch { /* Fehler still ignorieren */ }
+}
+
+// ── Gesetzliche Updates ───────────────────────────────────────────────────
+async function gesetzCheckStarten(btn) {
+  const liste = document.getElementById('updates-liste');
+  btn.disabled = true;
+  btn.textContent = 'Prüft...';
+  liste.innerHTML = '<div class="leer"><div class="leer-icon">🔍</div>EUR-Lex wird geprüft — bitte warten...</div>';
+
+  try {
+    // POST: führt HEAD + ggf. Volltext + LLM-Zusammenfassung durch
+    await fetch(`${API}/compliance/check`, { method: 'POST' });
+    // GET: gespeicherte Aktualisierungen anzeigen
+    const r = await fetch(`${API}/compliance/updates`);
+    const updates = await r.json();
+    updatesAnzeigen(updates);
+  } catch {
+    liste.innerHTML = '<div class="leer">Prüfung konnte nicht durchgeführt werden.</div>';
+  }
+  btn.disabled = false;
+  btn.textContent = 'Jetzt prüfen';
+}
+
+async function updatesLaden() {
+  try {
+    const r = await fetch(`${API}/compliance/updates`);
+    const updates = await r.json();
+    updatesAnzeigen(updates);
+  } catch { /* still */ }
+}
+
+function updatesAnzeigen(updates) {
+  const liste = document.getElementById('updates-liste');
+  if (!Array.isArray(updates) || !updates.length) {
+    liste.innerHTML = '<div class="leer"><div class="leer-icon">✅</div>Keine Gesetzesänderungen seit dem letzten Prüflauf.</div>';
+    return;
+  }
+  liste.innerHTML = updates.map(u => {
+    const datum = u.erstellt ? new Date(u.erstellt).toLocaleDateString('de-DE') : '';
+    return `<div class="status-zeile" style="flex-direction:column;align-items:flex-start;gap:4px;padding:12px 0">
+      <div style="display:flex;gap:8px;align-items:center;width:100%">
+        <span class="status-punkt sp-warn"></span>
+        <span style="font-weight:600;font-size:13px;flex:1">${escHtml(datum)} — Gesetzesänderung erkannt</span>
+      </div>
+      <div style="font-size:13px;color:var(--grau-5);line-height:1.55;padding-left:17px">${escHtml(u.inhalt.replace(/^\[.*?\]:\s*/, ''))}</div>
+    </div>`;
+  }).join('');
+}
+
+async function freigeben(id) {
+  await fetch(`${API}/approvals/${id}/approve`, { method: 'POST' });
+  document.getElementById(`fr-${id}`)?.remove();
+  statusLaden();
+}
+async function ablehnen(id) {
+  await fetch(`${API}/approvals/${id}/reject`, { method: 'POST' });
+  document.getElementById(`fr-${id}`)?.remove();
+  statusLaden();
+}
+
+// ── Frist-Countdown ───────────────────────────────────────────────────────
+function fristerechnen() {
+  const frist  = new Date('2026-08-02');
+  const heute  = new Date();
+  const tage   = Math.max(0, Math.round((frist - heute) / 86400000));
+  const gesamt = 420;
+
+  document.getElementById('k-tage').textContent       = tage + ' Tage';
+  document.getElementById('frist-anzeige').textContent = tage > 0 ? `⚠ Noch ${tage} Tage` : '✓ Abgelaufen';
+  document.getElementById('frist-text').textContent    =
+    `Vollständige EU AI Act Pflichten ab 02.08.2026 — noch ${tage} Tage`;
+  document.getElementById('fortschritt').style.width  =
+    Math.min(100, Math.round((1 - tage / gesamt) * 100)) + '%';
+}
+
+// ── Platzhalter-Chips (Datenschutz — ein Klick setzt Original ein) ───────
+function renderMitPlatzhaltern(text, platzhalter) {
+  if (!platzhalter || !Object.keys(platzhalter).length) {
+    return escHtml(text).replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  }
+  // Längste Tokens zuerst — verhindert Teilersetzungen (z.B. [X 2] vor [X])
+  const tokens = Object.keys(platzhalter).sort((a, b) => b.length - a.length);
+  // Zerlege Text in Token-Objekte und normale Zeichenketten
+  let teile = [text];
+  for (const token of tokens) {
+    const neuTeile = [];
+    for (const teil of teile) {
+      if (typeof teil === 'string') {
+        const splits = teil.split(token);
+        for (let i = 0; i < splits.length; i++) {
+          if (splits[i]) neuTeile.push(splits[i]);
+          if (i < splits.length - 1) neuTeile.push({ token, wert: platzhalter[token] });
+        }
+      } else {
+        neuTeile.push(teil);
+      }
+    }
+    teile = neuTeile;
+  }
+  return teile.map(teil => {
+    if (typeof teil === 'string') {
+      return escHtml(teil).replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    }
+    // data-wert: Browser dekodiert HTML-Entities automatisch → dataset.wert = Originalwert ✓
+    return `<button class="platzhalter-chip" data-wert="${escHtml(teil.wert)}"
+      onclick="platzhalterEinsetzen(this)" title="Klicken zum Einsetzen">${escHtml(teil.token)}</button>`;
+  }).join('');
+}
+
+function platzhalterEinsetzen(btn) {
+  const span = document.createElement('span');
+  span.className = 'platzhalter-eingesetzt';
+  span.textContent = btn.dataset.wert;
+  btn.replaceWith(span);
+}
+
+function alleEinsetzen(btn) {
+  const msg = btn.closest('.msg');
+  if (msg) msg.querySelectorAll('.platzhalter-chip').forEach(chip => platzhalterEinsetzen(chip));
+  eingabeFreigeben();
+  btn.closest('.pruefung-banner').style.opacity = '.5';
+}
+
+// ── Hilfsfunktionen ───────────────────────────────────────────────────────
+function tasteDruecken(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); nachrichtSenden(); }
+}
+function groessePassen(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 150) + 'px';
+}
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+</script>
+<div id="copyright" style="position:fixed;bottom:2px;right:8px;font-size:10px;color:#999;opacity:0.5;pointer-events:none;z-index:9999;">© 2026 Karola Fromm-Nasreldin | AILIZA</div>
+</body>
+</html>
