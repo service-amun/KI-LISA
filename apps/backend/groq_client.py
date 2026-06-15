@@ -1,5 +1,6 @@
+# © 2026 Karola Fromm-Nasreldin | AILIZA — Alle Rechte vorbehalten
 """
-KI-LISA — Groq LLM Client
+AILIZA — Groq LLM Client
 Zentraler API-Key im Backend — kein Nutzer-Key nötig.
 """
 
@@ -27,7 +28,7 @@ MODELS = {
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
-AI_DISCLAIMER = "\n\n---\n*KI-generiert — KI-LISA (EU AI Act Art. 52). Bitte prüfen Sie wichtige Entscheidungen.*"
+AI_DISCLAIMER = "\n\n---\n*KI-generiert — AILIZA (EU AI Act Art. 52). Bitte prüfen Sie wichtige Entscheidungen.*"
 
 # Kontext-Nachrichten auf max. 700 Zeichen kürzen — spart Token, behält Kern
 _MAX_CTX_CHARS = 700
@@ -60,7 +61,7 @@ def chat(
     if not api_key:
         return LLMResponse(
             text=(
-                "KI-LISA ist noch nicht vollständig eingerichtet. "
+                "AILIZA ist noch nicht vollständig eingerichtet. "
                 "Bitte wenden Sie sich an Ihren Administrator."
                 + AI_DISCLAIMER
             ),
@@ -97,7 +98,7 @@ def chat(
         text = data["choices"][0]["message"]["content"]
         tokens = data.get("usage", {}).get("total_tokens", 0)
 
-        if "ki-lisa" not in text.lower() and "ki-system" not in text.lower():
+        if "ailiza" not in text.lower() and "ki-system" not in text.lower():
             text += AI_DISCLAIMER
 
         return LLMResponse(text=text, model=chosen_model, tokens_used=tokens)

@@ -1,5 +1,6 @@
+# © 2026 Karola Fromm-Nasreldin | AILIZA — Alle Rechte vorbehalten
 """
-KI-LISA — Router Skill
+AILIZA — Router Skill
 Wählt Modell, Token-Budget und Kontextgröße — ohne LLM-Aufruf.
 """
 

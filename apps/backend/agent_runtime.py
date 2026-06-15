@@ -1,5 +1,6 @@
+# © 2026 Karola Fromm-Nasreldin | AILIZA — Alle Rechte vorbehalten
 """
-KI-LISA — Agent Runtime
+AILIZA — Agent Runtime
 Führt Aufgaben aus: Web-Suche via Tavily, URL-Abruf.
 """
 
@@ -69,7 +70,7 @@ def run_fetch(url: str) -> ToolResult:
     try:
         req = urllib.request.Request(
             url,
-            headers={"User-Agent": "KI-LISA/1.0 (EU AI Act konform)"},
+            headers={"User-Agent": "AILIZA/1.0 (EU AI Act konform)"},
         )
         with urllib.request.urlopen(req, timeout=10) as r:
             raw = r.read(50_000).decode("utf-8", errors="replace")

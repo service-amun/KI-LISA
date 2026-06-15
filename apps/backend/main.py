@@ -1,5 +1,6 @@
+# © 2026 Karola Fromm-Nasreldin | AILIZA — Alle Rechte vorbehalten
 """
-KI-LISA — FastAPI Backend
+AILIZA — FastAPI Backend
 EU-konformer KI-Assistent für KMU.
 """
 
@@ -48,8 +49,8 @@ _pii_zwischenspeicher: dict[str, dict] = {}
 _DEBUG = os.getenv("AILIZA_DEBUG", "false").lower() == "true"
 
 app = FastAPI(
-    title="KI-LISA",
-    description="EU-konformer KI-Assistent für KMU — DSGVO + EU AI Act konform",
+    title="AILIZA",
+    description="EU-konformer KI-Assistent für KMU — DSGVO + EU AI Act konform | © 2026 Karola Fromm-Nasreldin",
     version="0.3.0",
     docs_url="/docs" if _DEBUG else None,
     redoc_url=None,
@@ -126,7 +127,7 @@ def dashboard():
     index = FRONTEND_DIR / "index.html"
     if index.exists():
         return FileResponse(str(index))
-    return JSONResponse({"info": "KI-LISA Backend läuft. Frontend unter apps/frontend/index.html einrichten."})
+    return JSONResponse({"info": "AILIZA Backend läuft. Frontend unter apps/frontend/index.html einrichten."})
 
 
 # ── Sessions (Chat mit Compliance-Kontext) ─────────────────────────────────────
@@ -271,7 +272,7 @@ def chat_in_session(session_id: str, body: ChatRequest, request: Request):
             "warnings": guard.warnings,
         },
         "is_ai": True,
-        "disclaimer": "KI-generiert — KI-LISA (EU AI Act Art. 52)",
+        "disclaimer": "KI-generiert — AILIZA (EU AI Act Art. 52)",
     }
 
 
@@ -394,7 +395,7 @@ def ai_status():
         "konfiguriert": groq_client.is_configured(),
         "anbieter": "Groq",
         "modelle": list(groq_client.MODELS.keys()),
-        "compliance": "EU AI Act Art. 52 — KI-System aktiv",
+        "compliance": "EU AI Act Art. 52 — AILIZA aktiv",
         "risikoklasse": "Limited Risk",
     }
 

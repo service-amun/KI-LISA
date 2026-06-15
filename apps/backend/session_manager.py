@@ -1,5 +1,6 @@
+# © 2026 Karola Fromm-Nasreldin | AILIZA — Alle Rechte vorbehalten
 """
-KI-LISA — Chat Session Manager
+AILIZA — Chat Session Manager
 Jeder Chat hat seinen eigenen isolierten Compliance-Kontext.
 Sessions beeinflussen sich gegenseitig nicht.
 """

@@ -1,5 +1,6 @@
+# © 2026 Karola Fromm-Nasreldin | AILIZA — Alle Rechte vorbehalten
 """
-KI-LISA — Gateway
+AILIZA — Gateway
 Sichere Tool-Ausführung mit Guardrail-Prüfung und Audit-Logging.
 Einheitlicher Einstiegspunkt für alle Tool-Aufrufe.
 """

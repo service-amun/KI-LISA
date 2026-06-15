@@ -1,5 +1,6 @@
+# © 2026 Karola Fromm-Nasreldin | AILIZA — Alle Rechte vorbehalten
 """
-KI-LISA — Compliance-Kontext Manager
+AILIZA — Compliance-Kontext Manager
 Erkennt relevante DSGVO- und EU AI Act-Artikel in Nutzeranfragen
 und baut daraus einen kompakten System-Prompt.
 """
@@ -114,7 +115,7 @@ class ComplianceContextManager:
 
     # Kompakter Basis-Prompt — weniger Token, gleiche Wirkung
     BASE_SYSTEM_PROMPT = (
-        "Du bist KI-LISA, EU-konformer KI-Assistent für KMU. "
+        "Du bist AILIZA, EU-konformer KI-Assistent für KMU. "
         "Antworte auf Deutsch, präzise, ohne Fachjargon. "
         "Weise dich als KI aus (EU AI Act Art. 52). "
         "Keine automatisierten Entscheidungen zu Kredit, Einstellung oder Medizin."

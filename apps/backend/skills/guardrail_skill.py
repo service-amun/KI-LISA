@@ -1,5 +1,6 @@
+# © 2026 Karola Fromm-Nasreldin | AILIZA — Alle Rechte vorbehalten
 """
-KI-LISA — Compliance Guardrail
+AILIZA — Compliance Guardrail
 Prüft Eingaben auf PII und verbotene Inhalte.
 
 PII-Strategie (DSGVO Art. 5 — Privacy by Design):

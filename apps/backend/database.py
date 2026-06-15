@@ -1,5 +1,6 @@
+# © 2026 Karola Fromm-Nasreldin | AILIZA — Alle Rechte vorbehalten
 """
-KI-LISA — Datenbank-Setup
+AILIZA — Datenbank-Setup
 SQLite für Agent-Runs und Genehmigungen.
 """
 
