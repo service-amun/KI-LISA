@@ -89,6 +89,8 @@ def chat(
         headers={
             "Content-Type": "application/json",
             "Authorization": f"Bearer {api_key}",
+            # Ohne User-Agent blockiert Cloudflare den Standard-Python-Header (Fehler 1010)
+            "User-Agent": "Mozilla/5.0 (AILIZA-Backend)",
         },
     )
 
