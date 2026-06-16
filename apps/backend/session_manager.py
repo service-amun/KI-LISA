@@ -127,22 +127,27 @@ def add_message(session_id: str, role: str, content: str, warnings: list = None)
     if not session:
         raise ValueError(f"Session nicht gefunden: {session_id}")
 
-    _, ctx = _mgr.build_system_prompt(content)
+    # Nur Nutzer-Nachrichten lösen Risiko-Einstufung aus — die KI-Antwort
+    # erklärt oft selbst die Einschränkungen (z.B. "keine Kreditentscheidungen")
+    # und würde sonst ihre eigene Sicherheitswarnung als Hochrisiko-Anfrage werten.
+    ctx = ComplianceContext()
+    if role == "user":
+        _, ctx = _mgr.build_system_prompt(content)
 
-    for art in ctx.dsgvo_articles:
-        if art not in session.active_dsgvo_articles:
-            session.active_dsgvo_articles.append(art)
-    for art in ctx.eu_ai_act_articles:
-        if art not in session.active_eu_ai_act_articles:
-            session.active_eu_ai_act_articles.append(art)
-    for w in (ctx.warnings + (warnings or [])):
-        if w not in session.accumulated_warnings:
-            session.accumulated_warnings.append(w)
+        for art in ctx.dsgvo_articles:
+            if art not in session.active_dsgvo_articles:
+                session.active_dsgvo_articles.append(art)
+        for art in ctx.eu_ai_act_articles:
+            if art not in session.active_eu_ai_act_articles:
+                session.active_eu_ai_act_articles.append(art)
+        for w in (ctx.warnings + (warnings or [])):
+            if w not in session.accumulated_warnings:
+                session.accumulated_warnings.append(w)
 
-    if ctx.risk_level == "high":
-        session.risk_level = "high"
-    if ctx.requires_human_oversight:
-        session.requires_human_oversight = True
+        if ctx.risk_level == "high":
+            session.risk_level = "high"
+        if ctx.requires_human_oversight:
+            session.requires_human_oversight = True
 
     msg = ChatMessage(role=role, content=content, warnings=warnings or [])
     session.messages.append(msg)
