@@ -277,6 +277,20 @@ body {
   transition: background .12s;
 }
 .msg-outlook:hover { background: #005fa3; }
+.msg-whatsapp {
+  display: inline-block;
+  background: #25d366;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 4px 11px;
+  font-size: 12px;
+  cursor: pointer;
+  margin-top: 6px;
+  margin-left: 4px;
+  transition: background .12s;
+}
+.msg-whatsapp:hover { background: #1da851; }
 .msg-nutzer .msg-blase {
   background: var(--schwarz);
   color: var(--weiss);
@@ -982,6 +996,7 @@ body {
                 <button class="plus-menu-item" onclick="plusMenuAktion('📅 Termin erstellen: ')"><span class="plus-menu-ico">📅</span> Outlook Kalender</button>
                 <button class="plus-menu-item" onclick="plusMenuAktion('📁 Fasse dieses Google Drive Dokument zusammen: ')"><span class="plus-menu-ico">📁</span> Google Drive</button>
                 <button class="plus-menu-item" onclick="plusMenuAktion('💬 Schreibe eine Slack-Nachricht an: ')"><span class="plus-menu-ico">💬</span> Slack / Teams</button>
+                <button class="plus-menu-item" onclick="plusMenuAktion('📱 Schreibe eine WhatsApp-Nachricht an: ')"><span class="plus-menu-ico">📱</span> WhatsApp</button>
                 <button class="plus-menu-item" onclick="plusMenuAktion('📒 Erstelle eine Notion-Notiz über: ')"><span class="plus-menu-ico">📒</span> Notion</button>
               </div>
             </div>
@@ -1558,6 +1573,9 @@ function nachrichtAnzeigen(rolle, inhalt, warnungen = [], pruefung = false, plat
     if (/betreff\s*:/i.test(inhalt)) {
       blasenHtml += `<button class="msg-outlook" onclick="inOutlookOeffnen(this)" title="Als E-Mail in Outlook öffnen">📧 In Outlook öffnen</button>`;
     }
+    if (/whatsapp/i.test(inhalt)) {
+      blasenHtml += `<button class="msg-whatsapp" onclick="inWhatsappOeffnen(this)" title="In WhatsApp öffnen">📱 In WhatsApp öffnen</button>`;
+    }
   }
 
   div.innerHTML = blasenHtml;
@@ -1658,6 +1676,12 @@ function nachrichtKopieren(btn) {
     sel.removeAllRanges();
     sel.addRange(range);
   });
+}
+
+function inWhatsappOeffnen(btn) {
+  const blase = btn.closest('.msg-ki').querySelector('.msg-blase');
+  const text = (blase.innerText || blase.textContent).trim();
+  window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
 }
 
 function inOutlookOeffnen(btn) {
