@@ -241,8 +241,13 @@ body {
   font-size: 14px;
   line-height: 1.65;
   word-break: break-word;
-  user-select: text;
-  -webkit-user-select: text;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  cursor: text;
+}
+.msg-ki {
+  user-select: text !important;
+  -webkit-user-select: text !important;
 }
 .msg-kopieren {
   display: none;
@@ -448,6 +453,39 @@ body {
   color: var(--schwarz);
 }
 .eingabe-text::placeholder { color: var(--grau-4); }
+/* ── Plus-Menü ──────────────────────────────────────────────────────────── */
+.plus-menu-wrap { position: relative; flex-shrink: 0; }
+.plus-menu {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  background: var(--weiss);
+  border: 1px solid var(--grau-3);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 20px rgba(0,0,0,.14);
+  min-width: 210px;
+  z-index: 200;
+  overflow: hidden;
+}
+.plus-menu.offen { display: block; }
+.plus-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--schwarz);
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  transition: background .1s;
+}
+.plus-menu-item:hover { background: var(--grau-2); }
+.plus-menu-trenn { height: 1px; background: var(--grau-3); margin: 2px 0; }
+.plus-menu-ico { font-size: 17px; width: 24px; text-align: center; }
 /* ── Upload-Button ─────────────────────────────────────────────────────── */
 .upload-btn {
   background: none;
@@ -935,7 +973,18 @@ body {
             <input type="file" id="datei-input" style="display:none"
               accept=".pdf,.docx,.doc,.xlsx,.xls,.csv,.txt,.jpg,.jpeg,.png,.webp"
               onchange="dateiGewaehlt(this)">
-            <button class="upload-btn" onclick="document.getElementById('datei-input').click()" title="Datei hochladen (PDF, Word, Excel, Bild)" style="font-size:22px;font-weight:300;color:var(--grau-5)">+</button>
+            <div class="plus-menu-wrap">
+              <button class="upload-btn" onclick="plusMenuToggle(event)" title="Optionen" style="font-size:22px;font-weight:300;color:var(--grau-5)">+</button>
+              <div class="plus-menu" id="plus-menu">
+                <button class="plus-menu-item" onclick="plusMenuDatei()"><span class="plus-menu-ico">📎</span> Datei hochladen</button>
+                <div class="plus-menu-trenn"></div>
+                <button class="plus-menu-item" onclick="plusMenuAktion('📧 E-Mail an: ')"><span class="plus-menu-ico">📧</span> Outlook E-Mail</button>
+                <button class="plus-menu-item" onclick="plusMenuAktion('📅 Termin erstellen: ')"><span class="plus-menu-ico">📅</span> Outlook Kalender</button>
+                <button class="plus-menu-item" onclick="plusMenuAktion('📁 Fasse dieses Google Drive Dokument zusammen: ')"><span class="plus-menu-ico">📁</span> Google Drive</button>
+                <button class="plus-menu-item" onclick="plusMenuAktion('💬 Schreibe eine Slack-Nachricht an: ')"><span class="plus-menu-ico">💬</span> Slack / Teams</button>
+                <button class="plus-menu-item" onclick="plusMenuAktion('📒 Erstelle eine Notion-Notiz über: ')"><span class="plus-menu-ico">📒</span> Notion</button>
+              </div>
+            </div>
             <textarea
               class="eingabe-text"
               id="eingabe"
@@ -2011,6 +2060,30 @@ function dateiEntfernen() {
   document.getElementById('datei-input').value = '';
   document.getElementById('eingabe').placeholder = 'Schreiben Sie Ihre Frage hier…';
 }
+
+// ── Plus-Menü ─────────────────────────────────────────────────────────────
+function plusMenuToggle(e) {
+  e.stopPropagation();
+  document.getElementById('plus-menu').classList.toggle('offen');
+}
+function plusMenuSchliessen() {
+  document.getElementById('plus-menu')?.classList.remove('offen');
+}
+function plusMenuDatei() {
+  plusMenuSchliessen();
+  document.getElementById('datei-input').click();
+}
+function plusMenuAktion(prompt) {
+  plusMenuSchliessen();
+  const eingabe = document.getElementById('eingabe');
+  eingabe.value = prompt;
+  groessePassen(eingabe);
+  eingabe.focus();
+  eingabe.setSelectionRange(eingabe.value.length, eingabe.value.length);
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.plus-menu-wrap')) plusMenuSchliessen();
+});
 
 // ── Hilfsfunktionen ───────────────────────────────────────────────────────
 function tasteDruecken(e) {
