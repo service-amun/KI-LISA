@@ -47,8 +47,12 @@ for /f "tokens=1,2 delims==" %%a in (apps\backend\.env) do (
     if "%%a"=="AILIZA_PORT" set AILIZA_PORT=%%b
 )
 
-:: ── Pakete installieren ───────────────────────────────────────────────────
+:: ── Auto-Update ────────────────────────────────────────────────────────────
 echo.
+python updater.py
+echo.
+
+:: ── Pakete installieren ───────────────────────────────────────────────────
 echo  Prüfe Pakete (erste Ausführung dauert ~30 Sekunden)...
 python -m pip install -r requirements.txt -q --disable-pip-version-check
 if errorlevel 1 (
