@@ -719,6 +719,52 @@ body {
   font-size: .9em;
 }
 
+/* ── Einstellungen-Button ──────────────────────────────────────────────── */
+.btn-einstellungen {
+  background: none;
+  border: 1.5px solid var(--grau-3);
+  border-radius: 10px;
+  width: 36px; height: 36px;
+  cursor: pointer;
+  font-size: 17px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .12s;
+  color: var(--grau-5);
+  flex-shrink: 0;
+}
+.btn-einstellungen:hover { background: var(--grau-2); }
+
+/* ── Aktiv-Indikator Einstellungen ─────────────────────────────────────── */
+.btn-einstellungen.aktiv { border-color: var(--gruen); color: var(--gruen); background: var(--gruen-h); }
+
+/* ── Nachricht bearbeiten ──────────────────────────────────────────────── */
+.msg-nutzer { position: relative; }
+.msg-bearbeiten {
+  position: absolute;
+  left: -32px; top: 8px;
+  background: none; border: none;
+  font-size: 14px; color: var(--grau-4);
+  cursor: pointer; opacity: 0;
+  transition: opacity .15s;
+  padding: 4px;
+  border-radius: 6px;
+}
+.msg-nutzer:hover .msg-bearbeiten { opacity: 1; }
+.msg-bearbeiten:hover { color: var(--schwarz); background: var(--grau-2); }
+
+/* ── Custom Skill Buttons ──────────────────────────────────────────────── */
+.skill-karte-aktionen {
+  display: flex; gap: 5px;
+  margin-top: 8px; border-top: 1px solid var(--grau-3); padding-top: 8px;
+}
+.skill-karte-btn {
+  flex: 1; border: none; border-radius: 7px; padding: 5px;
+  font-size: 12px; cursor: pointer; transition: background .12s;
+}
+.skill-karte-btn.bearbeiten { background: var(--grau-2); color: var(--grau-5); }
+.skill-karte-btn.loeschen   { background: var(--rot-h); color: var(--rot); }
+.skill-karte-btn:hover { opacity: .8; }
+
 /* ── Hilfreich ─────────────────────────────────────────────────────────── */
 .verborgen { display: none !important; }
 </style>
@@ -736,6 +782,7 @@ body {
       <div class="kopf-sub">EU-konformer KI-Assistent</div>
     </div>
   </div>
+  <button class="btn-einstellungen" id="btn-einstellungen" onclick="einstellungenOeffnen()" title="Einstellungen">⚙️</button>
   <div class="kopf-status status-off" id="kopf-status">
     <div class="status-dot"></div>
     <span>Verbinde...</span>
@@ -947,6 +994,63 @@ body {
 </div>
 
 <!-- ╔══════════════════════════════════════════╗ -->
+<!-- ║           EINSTELLUNGEN-MODAL           ║ -->
+<!-- ╚══════════════════════════════════════════╝ -->
+<div class="modal-hintergrund" id="einstellungen-modal">
+  <div class="modal-box">
+    <div class="modal-titel">⚙️ AILIZA Einstellungen</div>
+    <div class="formular-gruppe">
+      <label class="formular-label">Eigene Anweisungen (wirken auf jeden Chat)</label>
+      <textarea class="formular-feld" id="eigene-anweisungen-feld" rows="5"
+        placeholder="z.B.:
+Antworte immer per Sie.
+Ich bin Buchhalter in einem KMU mit 30 Mitarbeitern.
+Halte Antworten kurz und auf den Punkt.
+Verwende keine Fachbegriffe ohne Erklärung."></textarea>
+      <div style="font-size:12px;color:var(--grau-4);margin-top:6px">
+        💡 Diese Anweisungen werden unsichtbar vor jeden Chat gesetzt — AILIZA verhält sich entsprechend.
+      </div>
+    </div>
+    <div class="modal-aktionen">
+      <button class="btn-abbrechen" onclick="einstellungenSchliessen()">Abbrechen</button>
+      <button class="btn-haupt" onclick="einstellungenSpeichern()">✓ Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════╗ -->
+<!-- ║            SKILL-EDIT-MODAL             ║ -->
+<!-- ╚══════════════════════════════════════════╝ -->
+<div class="modal-hintergrund" id="skill-modal">
+  <div class="modal-box">
+    <div class="modal-titel" id="skill-modal-titel">Neue Schnellhilfe-Karte</div>
+    <div class="formular-gruppe">
+      <label class="formular-label">Symbol (Emoji)</label>
+      <input class="formular-feld" id="skill-icon" type="text" placeholder="z.B. 📊" maxlength="4" style="width:80px">
+    </div>
+    <div class="formular-gruppe">
+      <label class="formular-label">Name *</label>
+      <input class="formular-feld" id="skill-name-feld" type="text" placeholder="z.B. Buchhaltungs-Frage">
+    </div>
+    <div class="formular-gruppe">
+      <label class="formular-label">Beschreibung</label>
+      <input class="formular-feld" id="skill-desc-feld" type="text" placeholder="Kurze Erklärung was diese Karte tut">
+    </div>
+    <div class="formular-gruppe">
+      <label class="formular-label">Prompt-Vorlage *</label>
+      <textarea class="formular-feld" id="skill-prompt-feld" rows="3"
+        placeholder="z.B.: Erkläre mir folgende Buchungsfrage: "></textarea>
+      <div style="font-size:12px;color:var(--grau-4);margin-top:4px">Der Text wird in die Eingabe eingesetzt — danach kannst du ihn noch ergänzen.</div>
+    </div>
+    <input type="hidden" id="skill-edit-index" value="-1">
+    <div class="modal-aktionen">
+      <button class="btn-abbrechen" onclick="skillModalSchliessen()">Abbrechen</button>
+      <button class="btn-haupt" onclick="skillSpeichern()">✓ Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════╗ -->
 <!-- ║              PROJEKT-MODAL              ║ -->
 <!-- ╚══════════════════════════════════════════╝ -->
 <div class="modal-hintergrund" id="projekt-modal">
@@ -989,6 +1093,8 @@ const AILIZA_AUTHOR = "© 2026 Karola Fromm-Nasreldin | AILIZA — Alle Rechte v
 let aktuelleSession = null;
 let projekte = JSON.parse(localStorage.getItem('ailiza_projekte') || '[]');
 let aktiverSkill = null;
+let eigeneAnweisungen = localStorage.getItem('ailiza_anweisungen') || '';
+let eigeneSkills = JSON.parse(localStorage.getItem('ailiza_eigene_skills') || '[]');
 
 // ── Skills ────────────────────────────────────────────────────────────────
 const SKILLS = [
@@ -1046,6 +1152,7 @@ const SKILLS = [
 statusPruefen();
 chatListeLaden();
 fristerechnen();
+einstellungenIndikatorAktualisieren();
 setInterval(statusPruefen, 20000);
 
 // ── Navigation ────────────────────────────────────────────────────────────
@@ -1210,7 +1317,7 @@ async function nachrichtSenden() {
     const r = await fetch(`${API}/sessions/${sid}/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session_id: sid, message: text }),
+      body: JSON.stringify({ session_id: sid, message: text, eigene_anweisungen: eigeneAnweisungen }),
     });
     tippindikatorVerstecken();
 
@@ -1265,7 +1372,12 @@ function nachrichtAnzeigen(rolle, inhalt, warnungen = [], pruefung = false, plat
     ? renderMitPlatzhaltern(inhalt, platzhalter)
     : escHtml(inhalt).replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
-  let blasenHtml = `<div class="msg-blase">${html}</div>`;
+  // Bearbeiten-Button für Nutzer-Nachrichten (Option A)
+  const bearbeitenBtn = (rolle === 'nutzer')
+    ? `<button class="msg-bearbeiten" onclick="nachrichtBearbeiten(this)" title="Bearbeiten">✏️</button>`
+    : '';
+
+  let blasenHtml = bearbeitenBtn + `<div class="msg-blase">${html}</div>`;
 
   // Einfache Hinweis-Warnungen (nur wenn kein Prüfungs-Banner folgt)
   if (warnungen && warnungen.length > 0 && !pruefung) {
@@ -1366,17 +1478,124 @@ function risikoZuruecksetzen() {
   document.getElementById('compliance-text').textContent = 'DSGVO & EU AI Act Basis-Schutz aktiv';
 }
 
-// ── Skills ────────────────────────────────────────────────────────────────
+// ── Einstellungen (Option C) ──────────────────────────────────────────────
+function einstellungenOeffnen() {
+  document.getElementById('eigene-anweisungen-feld').value = eigeneAnweisungen;
+  document.getElementById('einstellungen-modal').classList.add('offen');
+}
+function einstellungenSchliessen() {
+  document.getElementById('einstellungen-modal').classList.remove('offen');
+}
+function einstellungenSpeichern() {
+  eigeneAnweisungen = document.getElementById('eigene-anweisungen-feld').value.trim();
+  localStorage.setItem('ailiza_anweisungen', eigeneAnweisungen);
+  einstellungenSchliessen();
+  einstellungenIndikatorAktualisieren();
+}
+function einstellungenIndikatorAktualisieren() {
+  const btn = document.getElementById('btn-einstellungen');
+  if (eigeneAnweisungen) {
+    btn.classList.add('aktiv');
+    btn.title = 'Einstellungen (Anweisungen aktiv)';
+  } else {
+    btn.classList.remove('aktiv');
+    btn.title = 'Einstellungen';
+  }
+}
+
+// ── Nachricht bearbeiten (Option A) ──────────────────────────────────────
+function nachrichtBearbeiten(btn) {
+  const blase = btn.nextElementSibling;
+  const text = blase.innerText.replace(/\n/g, ' ').trim();
+  const eingabe = document.getElementById('eingabe');
+  eingabe.value = text;
+  groessePassen(eingabe);
+  eingabe.focus();
+  eingabe.setSelectionRange(eingabe.value.length, eingabe.value.length);
+  eingabe.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+// ── Skills (Option B — mit eigenen Karten) ────────────────────────────────
 function skillsAnzeigen() {
-  document.getElementById('skill-raster').innerHTML = SKILLS.map(s =>
-    `<div class="skill-karte ${aktiverSkill === s.id ? 'gewaehlt' : ''}"
-      onclick="skillWaehlen('${s.id}', ${JSON.stringify(s.prompt)})">
-      <div class="skill-icon">${s.icon}</div>
-      <div class="skill-name">${s.name}</div>
-      <div class="skill-desc">${s.desc}</div>
-      <div class="skill-bsp">${s.beispiel}</div>
-    </div>`
-  ).join('');
+  const alleSkills = [
+    ...SKILLS.map(s => ({ ...s, custom: false })),
+    ...eigeneSkills.map((s, i) => ({ ...s, id: 'custom_' + i, custom: true, _idx: i })),
+  ];
+
+  const kartenHtml = alleSkills.map(s => {
+    const aktiv = aktiverSkill === s.id ? 'gewaehlt' : '';
+    const aktionen = s.custom
+      ? `<div class="skill-karte-aktionen">
+          <button class="skill-karte-btn bearbeiten" onclick="event.stopPropagation();skillBearbeiten(${s._idx})">✏️ Bearbeiten</button>
+          <button class="skill-karte-btn loeschen"   onclick="event.stopPropagation();skillLoeschen(${s._idx})">🗑 Löschen</button>
+        </div>`
+      : '';
+    return `<div class="skill-karte ${aktiv}" onclick="skillWaehlen('${s.id}', ${JSON.stringify(s.prompt)})">
+      <div class="skill-icon">${s.icon || '⭐'}</div>
+      <div class="skill-name">${escHtml(s.name)}</div>
+      <div class="skill-desc">${escHtml(s.desc || '')}</div>
+      ${s.beispiel ? `<div class="skill-bsp">${escHtml(s.beispiel)}</div>` : ''}
+      ${aktionen}
+    </div>`;
+  }).join('');
+
+  document.getElementById('skill-raster').innerHTML = kartenHtml +
+    `<div class="skill-karte" onclick="skillModalOeffnen()" style="border-style:dashed;border-color:var(--grau-4);color:var(--grau-4);align-items:center;justify-content:center;display:flex;flex-direction:column;gap:8px;min-height:130px">
+      <div style="font-size:28px">➕</div>
+      <div style="font-weight:600;font-size:14px">Eigene Karte</div>
+    </div>`;
+}
+
+function skillModalOeffnen(idx = -1) {
+  document.getElementById('skill-edit-index').value = idx;
+  if (idx >= 0) {
+    const s = eigeneSkills[idx];
+    document.getElementById('skill-modal-titel').textContent = 'Karte bearbeiten';
+    document.getElementById('skill-icon').value = s.icon || '';
+    document.getElementById('skill-name-feld').value = s.name || '';
+    document.getElementById('skill-desc-feld').value = s.desc || '';
+    document.getElementById('skill-prompt-feld').value = s.prompt || '';
+  } else {
+    document.getElementById('skill-modal-titel').textContent = 'Neue Schnellhilfe-Karte';
+    document.getElementById('skill-icon').value = '';
+    document.getElementById('skill-name-feld').value = '';
+    document.getElementById('skill-desc-feld').value = '';
+    document.getElementById('skill-prompt-feld').value = '';
+  }
+  document.getElementById('skill-modal').classList.add('offen');
+}
+function skillModalSchliessen() {
+  document.getElementById('skill-modal').classList.remove('offen');
+}
+function skillBearbeiten(idx) { skillModalOeffnen(idx); }
+function skillLoeschen(idx) {
+  if (!confirm(`Karte „${eigeneSkills[idx].name}" löschen?`)) return;
+  eigeneSkills.splice(idx, 1);
+  localStorage.setItem('ailiza_eigene_skills', JSON.stringify(eigeneSkills));
+  skillsAnzeigen();
+}
+function skillSpeichern() {
+  const name = document.getElementById('skill-name-feld').value.trim();
+  const prompt = document.getElementById('skill-prompt-feld').value.trim();
+  if (!name || !prompt) {
+    alert('Bitte Name und Prompt-Vorlage ausfüllen.');
+    return;
+  }
+  const skill = {
+    icon:   document.getElementById('skill-icon').value.trim() || '⭐',
+    name,
+    desc:   document.getElementById('skill-desc-feld').value.trim(),
+    prompt,
+  };
+  const idx = parseInt(document.getElementById('skill-edit-index').value);
+  if (idx >= 0) {
+    eigeneSkills[idx] = skill;
+  } else {
+    eigeneSkills.push(skill);
+  }
+  localStorage.setItem('ailiza_eigene_skills', JSON.stringify(eigeneSkills));
+  skillModalSchliessen();
+  skillsAnzeigen();
 }
 
 function skillWaehlen(id, prompt) {

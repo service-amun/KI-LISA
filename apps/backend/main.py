@@ -96,6 +96,7 @@ class ChatRequest(BaseModel):
     session_id: str
     message: str = Field(..., min_length=1, max_length=4000)
     model: str = Field(default="standard")
+    eigene_anweisungen: str = Field(default="", max_length=1000)
 
 
 class NewSessionRequest(BaseModel):
@@ -202,6 +203,8 @@ def chat_in_session(session_id: str, body: ChatRequest, request: Request):
     # ── Schritt 4: Routing + Reflection + LLM-Aufruf ─────────────────────
     route = route_query(llm_text)          # Modell, Token-Budget, Temperatur
     system_prompt = session_manager.get_system_prompt(session_id, llm_text)
+    if body.eigene_anweisungen:
+        system_prompt = body.eigene_anweisungen.strip() + "\n\n" + system_prompt
 
     # Relevante Erinnerungen aus früheren Gesprächen anhängen
     gedaechtnis = kontext_aufbauen(llm_text)
