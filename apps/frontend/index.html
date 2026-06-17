@@ -241,7 +241,23 @@ body {
   font-size: 14px;
   line-height: 1.65;
   word-break: break-word;
+  user-select: text;
+  -webkit-user-select: text;
 }
+.msg-kopieren {
+  display: none;
+  background: none;
+  border: 1px solid var(--grau-3);
+  border-radius: 7px;
+  padding: 3px 9px;
+  font-size: 12px;
+  color: var(--grau-4);
+  cursor: pointer;
+  margin-top: 5px;
+  transition: all .12s;
+}
+.msg-ki:hover .msg-kopieren { display: inline-block; }
+.msg-kopieren:hover { background: var(--grau-2); color: var(--schwarz); }
 .msg-nutzer .msg-blase {
   background: var(--schwarz);
   color: var(--weiss);
@@ -1471,10 +1487,11 @@ function nachrichtAnzeigen(rolle, inhalt, warnungen = [], pruefung = false, plat
       </div>`;
   }
 
-  // KI-Disclaimer
+  // KI-Disclaimer + Kopieren-Button
   if (rolle === 'ki') {
     const zeit = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
     blasenHtml += `<div class="msg-meta">AILIZA · EU AI Act Art. 52 · ${zeit}</div>`;
+    blasenHtml += `<button class="msg-kopieren" onclick="nachrichtKopieren(this)" title="Antwort kopieren">📋 Kopieren</button>`;
   }
 
   div.innerHTML = blasenHtml;
@@ -1558,6 +1575,23 @@ function nachrichtBearbeiten(btn) {
   eingabe.focus();
   eingabe.setSelectionRange(eingabe.value.length, eingabe.value.length);
   eingabe.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+function nachrichtKopieren(btn) {
+  const blase = btn.closest('.msg-ki').querySelector('.msg-blase');
+  const text = blase.innerText || blase.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓ Kopiert';
+    btn.style.color = 'var(--gruen)';
+    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 1800);
+  }).catch(() => {
+    const sel = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(blase);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  });
 }
 
 // ── Skills (Option B — mit eigenen Karten) ────────────────────────────────
