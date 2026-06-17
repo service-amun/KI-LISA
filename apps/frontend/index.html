@@ -418,6 +418,38 @@ body {
   color: var(--schwarz);
 }
 .eingabe-text::placeholder { color: var(--grau-4); }
+/* ── Upload-Button ─────────────────────────────────────────────────────── */
+.upload-btn {
+  background: none;
+  border: none;
+  color: var(--grau-4);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 9px;
+  transition: color .12s, background .12s;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.upload-btn:hover { color: var(--schwarz); background: var(--grau-2); }
+.datei-vorschau {
+  background: var(--grau-2);
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.datei-vorschau-icon { font-size: 20px; flex-shrink: 0; }
+.datei-vorschau-info { flex: 1; min-width: 0; }
+.datei-vorschau-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.datei-vorschau-meta { color: var(--grau-4); font-size: 12px; }
+.datei-entfernen { background: none; border: none; color: var(--grau-4); cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 6px; }
+.datei-entfernen:hover { color: var(--rot); background: var(--rot-h); }
+.datei-ladeindikator { color: var(--grau-4); font-size: 12px; font-style: italic; }
+
 .senden-btn {
   background: var(--schwarz);
   color: var(--weiss);
@@ -868,7 +900,12 @@ body {
             <span>⚠️</span>
             <span id="sperre-text">Bitte bestätigen Sie den Hinweis oben, bevor Sie weiterschreiben.</span>
           </div>
+          <div id="datei-vorschau-bereich"></div>
           <div class="eingabe-feld" id="eingabe-feld">
+            <input type="file" id="datei-input" style="display:none"
+              accept=".pdf,.docx,.doc,.xlsx,.xls,.csv,.txt,.jpg,.jpeg,.png,.webp"
+              onchange="dateiGewaehlt(this)">
+            <button class="upload-btn" onclick="document.getElementById('datei-input').click()" title="Datei hochladen (PDF, Word, Excel, Bild)">📎</button>
             <textarea
               class="eingabe-text"
               id="eingabe"
@@ -1295,13 +1332,21 @@ async function nachrichtSenden() {
   if (eingabeSperreAktiv) return;
 
   const eingabe = document.getElementById('eingabe');
-  const text = eingabe.value.trim();
-  if (!text) return;
+  let text = eingabe.value.trim();
+  if (!text && !hochgeladeneDateiText) return;
+  if (!text && hochgeladeneDateiText) text = 'Bitte analysiere diese Datei und fasse den Inhalt zusammen.';
+
+  // Dateiinhalt als Kontext voranstellen
+  const nachrichtMitDatei = hochgeladeneDateiText
+    ? `[Datei: ${hochgeladeneDateiName}]\n\n${hochgeladeneDateiText}\n\n---\nFrage: ${text}`
+    : text;
+  const anzeigeText = hochgeladeneDateiName ? `📎 ${hochgeladeneDateiName}\n\n${text}` : text;
 
   eingabe.value = '';
   groessePassen(eingabe);
   document.getElementById('senden-btn').disabled = true;
-  nachrichtAnzeigen('nutzer', text);
+  nachrichtAnzeigen('nutzer', anzeigeText);
+  dateiEntfernen();
 
   const sid = await sessionSicherstellen();
   if (!sid) {
@@ -1317,7 +1362,7 @@ async function nachrichtSenden() {
     const r = await fetch(`${API}/sessions/${sid}/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session_id: sid, message: text, eigene_anweisungen: eigeneAnweisungen }),
+      body: JSON.stringify({ session_id: sid, message: nachrichtMitDatei, eigene_anweisungen: eigeneAnweisungen }),
     });
     tippindikatorVerstecken();
 
@@ -1841,6 +1886,60 @@ function alleEinsetzen(btn) {
   if (msg) msg.querySelectorAll('.platzhalter-chip').forEach(chip => platzhalterEinsetzen(chip));
   eingabeFreigeben();
   btn.closest('.pruefung-banner').style.opacity = '.5';
+}
+
+// ── Datei-Upload ──────────────────────────────────────────────────────────
+let hochgeladeneDateiText = '';
+let hochgeladeneDateiName = '';
+
+const DATEI_ICONS = { pdf: '📄', word: '📝', excel: '📊', csv: '📊', text: '📃', bild: '🖼️' };
+
+async function dateiGewaehlt(input) {
+  const datei = input.files[0];
+  if (!datei) return;
+
+  const bereich = document.getElementById('datei-vorschau-bereich');
+  bereich.innerHTML = `<div class="datei-vorschau"><span class="datei-ladeindikator">⏳ ${escHtml(datei.name)} wird gelesen…</span></div>`;
+
+  const formData = new FormData();
+  formData.append('datei', datei);
+
+  try {
+    const r = await fetch(`${API}/upload`, { method: 'POST', body: formData });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      bereich.innerHTML = `<div class="datei-vorschau" style="background:var(--rot-h)">⚠️ ${escHtml(err.detail || 'Datei konnte nicht gelesen werden')}</div>`;
+      input.value = '';
+      return;
+    }
+    const d = await r.json();
+    hochgeladeneDateiText = d.text;
+    hochgeladeneDateiName = d.dateiname;
+    const icon = DATEI_ICONS[d.typ] || '📎';
+    const kb = Math.round(d.zeichen / 5 * 4 / 1024);
+    bereich.innerHTML = `
+      <div class="datei-vorschau">
+        <span class="datei-vorschau-icon">${icon}</span>
+        <div class="datei-vorschau-info">
+          <div class="datei-vorschau-name">${escHtml(d.dateiname)}</div>
+          <div class="datei-vorschau-meta">${d.zeichen.toLocaleString()} Zeichen extrahiert · ~${kb} KB</div>
+        </div>
+        <button class="datei-entfernen" onclick="dateiEntfernen()" title="Entfernen">✕</button>
+      </div>`;
+    document.getElementById('eingabe').placeholder = 'Stellen Sie Ihre Frage zur Datei…';
+    document.getElementById('eingabe').focus();
+  } catch {
+    bereich.innerHTML = `<div class="datei-vorschau" style="background:var(--rot-h)">⚠️ Verbindungsfehler beim Hochladen</div>`;
+    input.value = '';
+  }
+}
+
+function dateiEntfernen() {
+  hochgeladeneDateiText = '';
+  hochgeladeneDateiName = '';
+  document.getElementById('datei-vorschau-bereich').innerHTML = '';
+  document.getElementById('datei-input').value = '';
+  document.getElementById('eingabe').placeholder = 'Schreiben Sie Ihre Frage hier…';
 }
 
 // ── Hilfsfunktionen ───────────────────────────────────────────────────────

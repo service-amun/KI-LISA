@@ -34,6 +34,7 @@ from skills.reflection_skill import kontext_aufbauen, auto_extrahieren
 from compliance.weekly_checker import bericht as compliance_bericht, komplett_check
 from compliance.scheduler import starten as compliance_starten
 from routers.approvals import router as approvals_router
+from routers.datei_upload import router as upload_router
 import gateway as tool_gateway
 
 # Compliance-Scheduler beim Start aktivieren (daemon thread)
@@ -65,6 +66,7 @@ app.add_middleware(
 )
 
 app.include_router(approvals_router)
+app.include_router(upload_router)
 
 # Frontend ausliefern
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
