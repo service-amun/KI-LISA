@@ -258,6 +258,20 @@ body {
 }
 .msg-ki:hover .msg-kopieren { display: inline-block; }
 .msg-kopieren:hover { background: var(--grau-2); color: var(--schwarz); }
+.msg-outlook {
+  display: inline-block;
+  background: #0078d4;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 4px 11px;
+  font-size: 12px;
+  cursor: pointer;
+  margin-top: 6px;
+  margin-left: 4px;
+  transition: background .12s;
+}
+.msg-outlook:hover { background: #005fa3; }
 .msg-nutzer .msg-blase {
   background: var(--schwarz);
   color: var(--weiss);
@@ -1487,11 +1501,14 @@ function nachrichtAnzeigen(rolle, inhalt, warnungen = [], pruefung = false, plat
       </div>`;
   }
 
-  // KI-Disclaimer + Kopieren-Button
+  // KI-Disclaimer + Aktions-Buttons
   if (rolle === 'ki') {
     const zeit = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
     blasenHtml += `<div class="msg-meta">AILIZA · EU AI Act Art. 52 · ${zeit}</div>`;
     blasenHtml += `<button class="msg-kopieren" onclick="nachrichtKopieren(this)" title="Antwort kopieren">📋 Kopieren</button>`;
+    if (/betreff\s*:/i.test(inhalt)) {
+      blasenHtml += `<button class="msg-outlook" onclick="inOutlookOeffnen(this)" title="Als E-Mail in Outlook öffnen">📧 In Outlook öffnen</button>`;
+    }
   }
 
   div.innerHTML = blasenHtml;
@@ -1592,6 +1609,25 @@ function nachrichtKopieren(btn) {
     sel.removeAllRanges();
     sel.addRange(range);
   });
+}
+
+function inOutlookOeffnen(btn) {
+  const blase = btn.closest('.msg-ki').querySelector('.msg-blase');
+  const text = blase.innerText || blase.textContent;
+
+  // Betreff extrahieren
+  const betreffMatch = text.match(/betreff\s*:\s*(.+)/i);
+  const betreff = betreffMatch ? betreffMatch[1].trim() : '';
+
+  // Körper: alles nach der Betreff-Zeile
+  let koerper = text;
+  if (betreffMatch) {
+    const idx = text.indexOf(betreffMatch[0]);
+    koerper = text.slice(idx + betreffMatch[0].length).trim();
+  }
+
+  const mailto = 'mailto:?subject=' + encodeURIComponent(betreff) + '&body=' + encodeURIComponent(koerper);
+  window.location.href = mailto;
 }
 
 // ── Skills (Option B — mit eigenen Karten) ────────────────────────────────
