@@ -1663,19 +1663,24 @@ function nachrichtBearbeiten(btn) {
 
 function nachrichtKopieren(btn) {
   const blase = btn.closest('.msg-ki').querySelector('.msg-blase');
-  const text = blase.innerText || blase.textContent;
-  navigator.clipboard.writeText(text).then(() => {
-    const orig = btn.textContent;
+  const text = (blase.innerText || blase.textContent).trim();
+  // Universelle Methode: verstecktes Textarea, immer kompatibel
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:0;left:0;width:2px;height:2px;opacity:0;';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try {
+    document.execCommand('copy');
     btn.textContent = '✓ Kopiert';
     btn.style.color = 'var(--gruen)';
-    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 1800);
-  }).catch(() => {
-    const sel = window.getSelection();
-    const range = document.createRange();
-    range.selectNodeContents(blase);
-    sel.removeAllRanges();
-    sel.addRange(range);
-  });
+    setTimeout(() => { btn.textContent = '📋 Kopieren'; btn.style.color = ''; }, 1800);
+  } catch(e) {
+    btn.textContent = '⚠ Fehler';
+    setTimeout(() => { btn.textContent = '📋 Kopieren'; }, 1800);
+  }
+  document.body.removeChild(ta);
 }
 
 function inWhatsappOeffnen(btn) {
