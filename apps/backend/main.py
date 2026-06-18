@@ -4,6 +4,7 @@ AILIZA — FastAPI Backend
 EU-konformer KI-Assistent für KMU.
 """
 
+import hmac
 import os
 import sys
 import time
@@ -208,7 +209,9 @@ def chat_in_session(session_id: str, body: ChatRequest, request: Request):
     route = route_query(llm_text)          # Modell, Token-Budget, Temperatur
     system_prompt = session_manager.get_system_prompt(session_id, llm_text)
     if body.eigene_anweisungen:
-        system_prompt = body.eigene_anweisungen.strip() + "\n\n" + system_prompt
+        guard_anw = check_input(body.eigene_anweisungen)
+        anw_text = guard_anw.sanitized_text or body.eigene_anweisungen
+        system_prompt = anw_text.strip() + "\n\n" + system_prompt
 
     # Relevante Erinnerungen aus früheren Gesprächen anhängen
     gedaechtnis = kontext_aufbauen(llm_text)
@@ -267,7 +270,7 @@ def chat_in_session(session_id: str, body: ChatRequest, request: Request):
     })
 
     return {
-        "text": response.text,                  # Mit Platzhaltern — Frontend zeigt klickbare Chips
+        "text": antwort_text,                   # Restaurierter Text — PII-Tokens durch Originalwerte ersetzt
         "platzhalter": aktuelles_mapping,       # Token → Originalwert (für Klick-Einsetzung im Frontend)
         "model": response.model,
         "tokens_used": response.tokens_used,
@@ -317,6 +320,14 @@ def agent_run(body: AgentRunRequest, request: Request):
     # Gateway: Guardrails + Audit für jeden Tool-Aufruf
     task_lower = body.task.lower()
     if task_lower.startswith("http://") or task_lower.startswith("https://"):
+        from urllib.parse import urlparse
+        parsed = urlparse(body.task)
+        if parsed.scheme not in ("https",):
+            return {"status": "blocked", "message": "Nur HTTPS-URLs erlaubt.", "results": []}
+        host = parsed.hostname or ""
+        blocked_prefixes = ("127.", "10.", "192.168.", "169.254.", "::1", "localhost")
+        if any(host.startswith(p) for p in blocked_prefixes):
+            return {"status": "blocked", "message": "Interne Adressen nicht erlaubt.", "results": []}
         results = [tool_gateway.ausfuehren("abruf", body.task)]
     else:
         results = [tool_gateway.ausfuehren("suche", body.task)]
@@ -393,7 +404,7 @@ def tools_liste():
 def audit_logs(request: Request, limit: int = 50):
     token = request.headers.get("X-Admin-Token", "")
     admin_token = os.getenv("AILIZA_ADMIN_TOKEN", "")
-    if not admin_token or token != admin_token:
+    if not admin_token or not hmac.compare_digest(token.encode(), admin_token.encode()):
         raise HTTPException(status_code=403, detail="Zugriff verweigert.")
     return get_audit_entries(limit=min(limit, 200))
 
@@ -449,25 +460,36 @@ def ai_test():
 
 # ── Compliance ────────────────────────────────────────────────────────────────
 
+def _check_admin_token(request: Request):
+    """Shared helper — raises 403 if X-Admin-Token is missing or wrong."""
+    token = request.headers.get("X-Admin-Token", "")
+    admin_token = os.getenv("AILIZA_ADMIN_TOKEN", "")
+    if not admin_token or not hmac.compare_digest(token.encode(), admin_token.encode()):
+        raise HTTPException(status_code=403, detail="Zugriff verweigert.")
+
+
 @app.get("/compliance/status")
-def compliance_status():
+def compliance_status(request: Request):
     """Letzter Compliance-Bericht ohne neuen Netzwerkaufruf."""
+    _check_admin_token(request)
     return compliance_bericht()
 
 
 @app.post("/compliance/check")
-def compliance_check():
+def compliance_check(request: Request):
     """
     Vollständiger Check: EUR-Lex HEAD → ggf. Volltext + LLM-Zusammenfassung
     → RAG-Gedächtnis-Update → Bericht.
     Kann einige Sekunden dauern wenn Gesetze sich geändert haben.
     """
+    _check_admin_token(request)
     return komplett_check()
 
 
 @app.get("/compliance/updates")
-def compliance_updates():
+def compliance_updates(request: Request):
     """Zeigt gespeicherte Gesetzesänderungen aus dem RAG-Gedächtnis."""
+    _check_admin_token(request)
     from skills.reflection_skill import erinnern
     erinnerungen = erinnern("gesetzesänderung aktualisierung dsgvo eu ai act pflicht", limit=10)
     return [

@@ -73,12 +73,11 @@ async def datei_hochladen(datei: UploadFile = File(...)):
     Datei hochladen und Text extrahieren.
     Unterstützt: PDF, Word, Excel, CSV, TXT, JPG, PNG
     """
-    if datei.size and datei.size > MAX_DATEIGRÖSSE:
-        raise HTTPException(413, "Datei zu groß (max. 10 MB)")
-
     name = datei.filename or "unbekannt"
     endung = name.rsplit(".", 1)[-1].lower() if "." in name else ""
-    daten = await datei.read()
+    daten = await datei.read(MAX_DATEIGRÖSSE + 1)
+    if len(daten) > MAX_DATEIGRÖSSE:
+        raise HTTPException(413, "Datei zu groß (max. 10 MB)")
 
     if endung == "pdf":
         text = _pdf_text(daten)

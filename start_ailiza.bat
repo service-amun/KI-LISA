@@ -29,12 +29,7 @@ if not exist "apps\backend\.env" (
     exit /b 0
 )
 
-:: Auto-Update
-echo  Pruefe auf Updates...
-python updater.py
-echo.
-
-:: Pakete installieren
+:: Pakete installieren (muss VOR dem Updater laufen, damit Abhaengigkeiten vorhanden sind)
 echo  Pruefe Pakete...
 python -m pip install -r requirements.txt -q --disable-pip-version-check
 if errorlevel 1 (
@@ -45,7 +40,13 @@ if errorlevel 1 (
 echo  Pakete OK.
 echo.
 
+:: Auto-Update (laeuft nach pip install, damit Updater-Abhaengigkeiten verfuegbar sind)
+echo  Pruefe auf Updates...
+python updater.py
+echo.
+
 :: Server starten
+:: HINWEIS: Fuer Railway/Container-Deployments --host 0.0.0.0 und --port $PORT verwenden (siehe Procfile).
 echo  AILIZA laeuft auf: http://127.0.0.1:8001/dashboard
 echo  Browser oeffnet sich gleich...
 echo  Zum Beenden: Strg+C oder Fenster schliessen

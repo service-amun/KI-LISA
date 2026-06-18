@@ -1388,7 +1388,17 @@ async function neuerChat() {
 }
 
 async function alleChatsLoeschen() {
+  try {
+    const r = await fetch(`${API}/sessions`);
+    if (r.ok) {
+      const sessions = await r.json();
+      await Promise.all(sessions.map(s =>
+        fetch(`${API}/sessions/${s.session_id}`, { method: 'DELETE' })
+      ));
+    }
+  } catch(e) {}
   aktuelleSession = null;
+  document.getElementById('nachrichten').innerHTML = '';
   chatListeLaden();
   neuerChat();
 }
@@ -1664,22 +1674,21 @@ function nachrichtBearbeiten(btn) {
 function nachrichtKopieren(btn) {
   const blase = btn.closest('.msg-ki').querySelector('.msg-blase');
   const text = (blase.innerText || blase.textContent).trim();
-  // Universelle Methode: verstecktes Textarea, immer kompatibel
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = '✓ Kopiert'; btn.style.color = 'var(--gruen)';
+      setTimeout(() => { btn.textContent = '📋 Kopieren'; btn.style.color = ''; }, 1800);
+    }).catch(() => _execCopy(text, btn));
+  } else {
+    _execCopy(text, btn);
+  }
+}
+function _execCopy(text, btn) {
   const ta = document.createElement('textarea');
   ta.value = text;
   ta.style.cssText = 'position:fixed;top:0;left:0;width:2px;height:2px;opacity:0;';
-  document.body.appendChild(ta);
-  ta.focus();
-  ta.select();
-  try {
-    document.execCommand('copy');
-    btn.textContent = '✓ Kopiert';
-    btn.style.color = 'var(--gruen)';
-    setTimeout(() => { btn.textContent = '📋 Kopieren'; btn.style.color = ''; }, 1800);
-  } catch(e) {
-    btn.textContent = '⚠ Fehler';
-    setTimeout(() => { btn.textContent = '📋 Kopieren'; }, 1800);
-  }
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try { document.execCommand('copy'); btn.textContent = '✓ Kopiert'; btn.style.color = 'var(--gruen)'; setTimeout(() => { btn.textContent = '📋 Kopieren'; btn.style.color = ''; }, 1800); } catch(e) {}
   document.body.removeChild(ta);
 }
 

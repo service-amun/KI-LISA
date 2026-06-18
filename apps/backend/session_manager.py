@@ -5,8 +5,8 @@ Jeder Chat hat seinen eigenen isolierten Compliance-Kontext.
 Sessions beeinflussen sich gegenseitig nicht.
 """
 
-import hashlib
 import json
+import secrets
 import sqlite3
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
@@ -90,7 +90,7 @@ def _save(session: ChatSession):
 
 
 def create_session(title: str = "Neuer Chat") -> ChatSession:
-    sid = hashlib.sha256(datetime.now().isoformat().encode()).hexdigest()[:16]
+    sid = secrets.token_hex(16)
     session = ChatSession(session_id=sid, title=title)
     _save(session)
     return session
