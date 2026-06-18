@@ -100,7 +100,7 @@ def chat(
     system_prompt: str,
     context: list = None,
     model: str = None,
-    max_tokens: int = 768,
+    max_tokens: int = 2048,
     temperature: float = 0.55,
 ) -> LLMResponse:
     api_key = os.getenv("GROQ_API_KEY", "")
