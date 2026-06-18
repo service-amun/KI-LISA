@@ -1,12 +1,12 @@
 # Datenschutz-Folgenabschätzung (DPIA)
 ## nach Art. 35 DSGVO — AILIZA KI-Assistent
 
-**Dokument-Status:** Vorlage v1.2 — auszufüllen vor Go-Live  
+**Dokument-Status:** Vorlage v1.3 — auszufüllen vor Go-Live  
 **Erstellt:** 2026-06-18  
-**Zuletzt überarbeitet:** 2026-06-18 (v1.2: DPF-Prüfung, Art. 9 Schutzlücke, TDDDG, Backup-Löschkonzept)  
+**Zuletzt überarbeitet:** 2026-06-18 (v1.3: §26 BDSG, Art. 9 präzisiert, DPF-Checkliste, EU AI Act Reg.-Nr., Art. 36 vorsichtiger)  
 **Verantwortlicher:** [FIRMENNAME EINTRAGEN]  
 **Datenschutzbeauftragter (falls bestellt):** [DSB-NAME EINTRAGEN]  
-**Versionierung:** v1.2 — vor Inbetriebnahme abzuschließen  
+**Versionierung:** v1.3 — vor Inbetriebnahme abzuschließen  
 
 ---
 
@@ -45,14 +45,19 @@ AILIZA trifft keine automatisierten Entscheidungen mit Rechtswirkung (Art. 22 DS
 
 | Kategorie | Beispiel | Rechtsgrundlage |
 |-----------|----------|-----------------|
-| Gewöhnliche personenbezogene Daten | Namen, E-Mail-Adressen in Nachrichten | Art. 6 Abs. 1 lit. b/f DSGVO |
+| Personenbezogene Daten von Mitarbeitenden | Namen, dienstliche E-Mail-Adressen, Arbeitskorrespondenz | Art. 6 Abs. 1 lit. b DSGVO i.V.m. **§ 26 Abs. 1 BDSG** (Beschäftigtendatenschutz) |
+| Personenbezogene Daten von Dritten | Kundennamen, Kontaktdaten in E-Mail-Entwürfen | Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse) |
 | Berufliche Kommunikation | E-Mail-Entwürfe, Dokumentinhalte | Art. 6 Abs. 1 lit. b DSGVO |
 
-Besondere Kategorien personenbezogener Daten (Art. 9 DSGVO) sind nicht Gegenstand der vorgesehenen Verarbeitung. Das System ist nicht auf die Erfassung solcher Daten ausgelegt und verarbeitet sie nicht systematisch. Nutzer werden durch Nutzungsrichtlinie und technische Hinweise angewiesen, keine besonderen Kategorien einzugeben.
+Hinweis zu Beschäftigtendaten: Bei der Verarbeitung von Daten eigener Mitarbeitender ist stets § 26 BDSG als spezialgesetzliche Grundlage vorrangig zu prüfen. Insbesondere für Überwachungsmaßnahmen oder die Auswertung von Kommunikationsinhalten gelten verschärfte Anforderungen. AILIZA ist nicht als Überwachungswerkzeug konzipiert.
 
-Erfolgt dennoch eine versehentliche Eingabe, greift folgendes technisches Schutzkonzept: Das System erkennt PII-Muster, warnt den Nutzer unverzüglich und tokenisiert den Inhalt vor jeder weiteren Übermittlung im RAM. Der Klartext wird nicht dauerhaft gespeichert. Die Verarbeitung beschränkt sich auf das zur Bearbeitung der Nutzeranfrage unbedingt Erforderliche und endet mit der Sitzung. Eine wirksame Einwilligung nach Art. 9 Abs. 2 lit. a DSGVO wird durch die bloße Eingabe nicht begründet.
+**Besondere Kategorien personenbezogener Daten nach Art. 9 DSGVO**
 
-Keine systematische Verarbeitung besonderer Kategorien. AILIZA ist nicht für Personalentscheidungen, Kreditentscheidungen oder medizinische Diagnosen vorgesehen.
+Die Verarbeitung besonderer Kategorien personenbezogener Daten ist nicht Zweck des Systems. Aufgrund freier Texteingaben kann eine unbeabsichtigte Eingabe solcher Daten jedoch nicht vollständig ausgeschlossen werden.
+
+Das System ist nicht für Gesundheitsdaten, Personalentscheidungen, Kreditwürdigkeitsprüfungen, medizinische Diagnosen oder vergleichbare Hochrisiko-Anwendungen vorgesehen. Nutzer werden vor und während der Nutzung darauf hingewiesen, keine besonderen Kategorien personenbezogener Daten einzugeben.
+
+Bei erkannten sensiblen Inhalten oder PII-Mustern wird der Nutzer gewarnt. Inhalte werden vor einer weiteren Verarbeitung soweit technisch möglich tokenisiert oder minimiert. Klartextdaten werden nicht dauerhaft gespeichert.
 
 ### 2.4§ Betroffene Personen
 
@@ -63,24 +68,24 @@ Keine systematische Verarbeitung besonderer Kategorien. AILIZA ist nicht für Pe
 
 ### 2.5§ Datenübermittlungen und Auftragsverarbeiter
 
-| Empfänger | Land | Zweck | Rechtsgrundlage |
-|-----------|------|-------|-----------------|
-| Groq Inc. | USA | LLM-Inferenz (KI-Verarbeitung) | Vorrangig Art. 45 DSGVO (EU-US Data Privacy Framework), sofern Groq DPF-zertifiziert — sonst Art. 46 DSGVO (SCC + AVV + TIA) |
-| Tavily Inc. (optional) | USA | Echtzeit-Websuche | Vorrangig Art. 45 DSGVO (EU-US DPF), sofern Tavily zertifiziert — sonst Art. 46 DSGVO (SCC + AVV + TIA) |
+Vor Go-Live ist für jeden eingesetzten US-Dienstleister zu prüfen und zu dokumentieren:
 
-**Vor Go-Live zu prüfen:**
-- DPF-Zertifizierung Groq: dataprivacyframework.gov → Suche nach "Groq". Falls zertifiziert: Rechtsgrundlage Art. 45 DSGVO, kein TIA zwingend erforderlich (SCC als Fallback empfohlen).
-- DPF-Zertifizierung Tavily: dataprivacyframework.gov → Suche nach "Tavily".
-- Falls nicht zertifiziert: TIA nach Schrems II (EuGH C-311/18) Pflicht — bewertet FISA 702 / EO 12333 Zugriffsrisiken und legt ggf. ergänzende TOMs fest.
-- AVV mit Groq unterzeichnen: console.groq.com → Legal.
-- AVV mit Tavily vor Aktivierung der Websuche unterzeichnen.
+- Besteht eine gültige Zertifizierung im EU-US Data Privacy Framework (DPF)? Prüfung unter dataprivacyframework.gov. Falls zertifiziert: Rechtsgrundlage Art. 45 DSGVO (Angemessenheitsbeschluss 2023/1795) — SCC und TIA sind dann nicht zwingend, aber als Fallback empfohlen.
+- Liegt ein Auftragsverarbeitungsvertrag (AVV) vor?
+- Falls keine DPF-Zertifizierung besteht: Sind Standardvertragsklauseln (SCC, Art. 46 DSGVO) und ein Transfer Impact Assessment (TIA nach Schrems II, EuGH C-311/18) abgeschlossen?
+- Ist vertraglich ausgeschlossen, dass Eingaben und Ausgaben zu Trainingszwecken verwendet werden?
+
+| Empfänger | Land | Zweck | Zu prüfende Rechtsgrundlage |
+|-----------|------|-------|---------------------------|
+| Groq Inc. | USA | LLM-Inferenz | Art. 45 DSGVO (DPF), sofern zertifiziert — sonst Art. 46 + SCC + AVV + TIA |
+| Tavily Inc. (optional) | USA | Echtzeit-Websuche | Art. 45 DSGVO (DPF), sofern zertifiziert — sonst Art. 46 + SCC + AVV + TIA |
 
 ### 2.6§ Speicherfristen
 
 | Datenkategorie | Speicherort | Inhalt | Frist | Grundlage |
 |----------------|-------------|--------|-------|-----------|
 | Chat-Nachrichten | Lokale SQLite-DB | Tokenisierte Texte (kein PII-Klartext) | 90 Tage (konfigurierbar: `AILIZA_DATA_RETENTION_DAYS`) | Art. 5 Abs. 1 lit. e DSGVO |
-| Audit-Logs | Lokale SQLite-DB | Ausschließlich technische Metadaten: Zeitpunkt, Nutzer-ID, Fehlercodes, Systemereignisse — keine vollständigen Prompt- oder Antwortinhalte | 90 Tage | Art. 30 DSGVO |
+| Audit-Logs | Lokale SQLite-DB | Ausschließlich technische Metadaten: Zeitpunkt, Nutzer-ID, Fehlercodes, Systemereignisse — keine Prompt- oder Antwortinhalte | 90 Tage | Art. 30 DSGVO |
 | Sitzungs-Metadaten | RAM (kein Persist) | Session-ID, Compliance-Status | Bis Sitzungsende | — |
 | PII-Tokens im Vault | RAM (kein Persist) | Tokenisierungs-Map | 30 Minuten oder Sitzungsende | Art. 25 DSGVO (Privacy by Design) |
 
@@ -102,12 +107,12 @@ Ja. Der Einsatz eines KI-Assistenten verfolgt legitime betriebliche Zwecke (Effi
 
 ### 3.3§ Zweckbindung (Art. 5 Abs. 1 lit. b)
 
-Daten werden ausschließlich für die vom Nutzer initiierte Anfrage verarbeitet. Kein Training von Modellen mit Nutzerdaten (Groq-Vertragsbedingungen prüfen und im TIA dokumentieren).
+Daten werden ausschließlich für die vom Nutzer initiierte Anfrage verarbeitet. Kein Training von Modellen mit Nutzerdaten (vertraglich mit Groq/Tavily auszuschließen und zu dokumentieren).
 
 ### 3.4§ Transparenz (Art. 13 DSGVO)
 
 - Informationsdialog beim ersten Start gemäß Art. 13 DSGVO
-- KI-Disclosure bei jeder Antwort gemäß den Transparenzpflichten des EU AI Act
+- KI-Disclosure bei jeder Antwort gemäß den Transparenzpflichten der Verordnung (EU) 2024/1689 (EU AI Act): Nutzer müssen erkennen können, dass sie mit einem KI-System interagieren
 - Datenschutzerklärung: [LINK EINTRAGEN — noch zu erstellen]
 
 ### 3.5§ Technische und organisatorische Maßnahmen (Art. 32 DSGVO)
@@ -118,8 +123,8 @@ Daten werden ausschließlich für die vom Nutzer initiierte Anfrage verarbeitet.
 - Rate Limiting (20 Anfragen/Minute pro IP)
 - Input-Validierung gegen Injection-Angriffe
 - SQLite-Datenbank lokal, kein externer Datenbankzugriff
-- Regelmäßiges Löschen alter Sessions (automatisierter Retention-Daemon)
-- Backups der SQLite-Datenbank: verschlüsselt aufbewahren, Zugriff auf berechtigte Personen beschränken; Backups werden nach spätestens 90 Tagen automatisiert überschrieben oder gelöscht — die Backup-Aufbewahrungsfrist darf die konfigurierte Datenspeicherfrist (`AILIZA_DATA_RETENTION_DAYS`) nicht überschreiten (Art. 5 Abs. 1 lit. e DSGVO)
+- Automatisierter Retention-Daemon löscht Sessions nach konfigurierter Frist
+- Backups der SQLite-Datenbank: verschlüsselt aufbewahren, Zugriff auf berechtigte Personen beschränken; Backups werden nach spätestens 90 Tagen (bzw. der konfigurierten `AILIZA_DATA_RETENTION_DAYS`-Frist) überschrieben oder gelöscht — die Backup-Aufbewahrungsfrist darf die Datenspeicherfrist nicht überschreiten (Art. 5 Abs. 1 lit. e DSGVO)
 
 ---
 
@@ -130,21 +135,21 @@ Daten werden ausschließlich für die vom Nutzer initiierte Anfrage verarbeitet.
 | # | Risiko | Eintrittsw. | Schwere | Risiko gesamt | Maßnahme |
 |---|--------|-------------|---------|---------------|----------|
 | R1 | Unbeabsichtigte PII-Übermittlung an Groq | Mittel | Mittel | **Mittel** | PII-Tokenisierung, Warnhinweise |
-| R2 | Drittland-Transfer ohne ausreichende Garantien (Groq/USA) | Mittel | Hoch | **Hoch** | SCC + AVV + TIA — vor Go-Live abschließen |
+| R2 | Drittland-Transfer ohne ausreichende Garantien (Groq/USA) | Mittel | Hoch | **Hoch** | DPF-Prüfung + ggf. SCC + AVV + TIA — vor Go-Live abschließen |
 | R3 | Unberechtigter Zugriff auf Audit-Logs | Niedrig | Hoch | **Mittel** | Admin-Token-Schutz |
 | R4 | Datenpanne durch Sicherheitslücke | Niedrig | Hoch | **Mittel** | HTTPS, Rate Limiting, Input-Validierung |
-| R5 | Nutzer vertraut KI-Entscheidung blind | Mittel | Mittel | **Mittel** | KI-Disclosure, Human Oversight Banner |
-| R6 | Eingabe besonderer Kategorien (Gesundheit, Gehalt, HR) durch Nutzer | Mittel | Sehr hoch | **Hoch** | Nutzerwarnungen, Anweisung zur Nicht-Eingabe, technische PII-Erkennung |
+| R5 | Nutzer vertraut KI-Entscheidung blind | Mittel | Mittel | **Mittel** | KI-Disclosure nach EU AI Act (EU) 2024/1689, Human Oversight Banner |
+| R6 | Eingabe besonderer Kategorien (Gesundheit, Gehalt, HR) durch Nutzer | Mittel | Sehr hoch | **Hoch** | Nutzerwarnungen, Nutzungsrichtlinie, technische PII-Erkennung |
 | R7 | Datenverlust bei SQLite-Korruption | Niedrig | Niedrig | **Niedrig** | Regelmäßige Backups |
-| R8 | Zugriff auf unverschlüsselte Backups | Niedrig | Hoch | **Mittel** | Verschlüsselung aller Backups, Zugriffskontrollen |
+| R8 | Zugriff auf unverschlüsselte Backups | Niedrig | Hoch | **Mittel** | Verschlüsselung aller Backups, Zugriffskontrollen, Löschkonzept |
 
 ### 4.2§ Verbleibende Risiken nach Maßnahmen
 
-- **R2 (Drittland-Transfer):** Verbleibt erhöht solange TIA nicht abgeschlossen. Nach vollständigem Abschluss (AVV + SCC + TIA mit ggf. ergänzenden TOMs): vertretbar.
-- **R5 (Blinde KI-Vertrauung):** Strukturelles Restrisiko — durch Pflicht-Disclosure und Human Oversight Banner reduziert, nicht vollständig eliminierbar.
-- **R6 (Besondere Kategorien):** Verbleibt solange Freitexteingabe möglich. Reduzierung durch Nutzerschulung und technische Warnhinweise.
+- **R2 (Drittland-Transfer):** Verbleibt hoch solange DPF-Status unklar und AVV/TIA nicht abgeschlossen. Nach vollständigem Nachweis: vertretbar.
+- **R5 (Blinde KI-Vertrauung):** Strukturelles Restrisiko — reduziert durch Pflicht-Disclosure, nicht vollständig eliminierbar.
+- **R6 (Besondere Kategorien):** Verbleibt solange Freitexteingabe möglich. Reduziert durch Nutzerschulung und technische Warnhinweise, aber nicht vollständig ausschließbar.
 
-**Gesamtbewertung nach Maßnahmen:** Vertretbares Restrisiko, keine Konsultationspflicht nach Art. 36 DSGVO — vorausgesetzt AVV mit Groq, SCC und TIA sind abgeschlossen.
+**Gesamtbewertung:** Vertretbares Restrisiko nach vollständiger Umsetzung aller Maßnahmen. Ob eine Konsultationspflicht nach Art. 36 DSGVO entfällt, ist im Einzelfall zu prüfen — insbesondere für R2 und R6 (siehe §6).
 
 ---
 
@@ -152,28 +157,30 @@ Daten werden ausschließlich für die vom Nutzer initiierte Anfrage verarbeitet.
 
 | Maßnahme | Verantwortlich | Frist | Status |
 |----------|---------------|-------|--------|
+| DPF-Zertifizierung Groq prüfen (dataprivacyframework.gov) | [DSB / IT-Admin] | Vor Go-Live | ☐ Offen |
+| DPF-Zertifizierung Tavily prüfen (falls genutzt) | [DSB / IT-Admin] | Vor Aktivierung | ☐ Offen |
 | AVV mit Groq unterzeichnen | [GESCHÄFTSFÜHRUNG] | Vor Go-Live | ☐ Offen |
 | AVV mit Tavily (falls genutzt) | [GESCHÄFTSFÜHRUNG] | Vor Aktivierung | ☐ Offen |
-| Transfer Impact Assessment (TIA) für Groq dokumentieren | [DSB] | Vor Go-Live | ☐ Offen |
-| Transfer Impact Assessment (TIA) für Tavily (falls genutzt) | [DSB] | Vor Aktivierung | ☐ Offen |
+| TIA für Groq dokumentieren (falls kein DPF) | [DSB] | Vor Go-Live | ☐ Offen |
+| TIA für Tavily dokumentieren (falls kein DPF) | [DSB] | Vor Aktivierung | ☐ Offen |
+| Kein Modell-Training durch Groq/Tavily vertraglich sicherstellen | [GESCHÄFTSFÜHRUNG] | Vor Go-Live | ☐ Offen |
 | Datenschutzerklärung veröffentlichen | [DSB / ANWALT] | Vor Go-Live | ☐ Offen |
 | Impressum prüfen (DDG §5) | [GESCHÄFTSFÜHRUNG] | Vor Go-Live | ☐ Offen |
 | `AILIZA_COMPANY_NAME` und `AILIZA_DSB_EMAIL` in `.env` setzen | IT-Admin | Vor Go-Live | ☐ Offen |
 | `AILIZA_ACCESS_PIN` setzen | IT-Admin | Vor Go-Live | ☐ Offen |
-| Backups verschlüsseln und Zugriffskonzept dokumentieren | IT-Admin | Vor Go-Live | ☐ Offen |
+| Backups verschlüsseln, Zugriffskonzept und Löschkonzept dokumentieren | IT-Admin | Vor Go-Live | ☐ Offen |
 | Mitarbeitende gemäß Art. 13 DSGVO informieren | HR / DSB | Vor Inbetriebnahme | ☐ Offen |
 | Nutzungsrichtlinie: keine besonderen Kategorien eingeben | HR / DSB | Vor Inbetriebnahme | ☐ Offen |
+| Beschäftigtendatenschutz §26 BDSG prüfen (Betriebsrat falls vorhanden) | [GESCHÄFTSFÜHRUNG / DSB] | Vor Inbetriebnahme | ☐ Offen |
 | Regelmäßige DPIA-Überprüfung | DSB | Jährlich | ☐ Wiederkehrend |
 
 ---
 
 ## 6§ Konsultation Datenschutzbehörde (Art. 36)
 
-Eine vorherige Konsultation der zuständigen Aufsichtsbehörde ist nicht erforderlich, sofern:
-- AVV mit Groq unterzeichnet ist
-- TIA für alle Drittlandübermittlungen dokumentiert ist
-- Keine automatisierten Entscheidungen mit Rechtswirkung getroffen werden
-- Mitarbeitende gemäß Art. 13 DSGVO informiert wurden
+Eine vorherige Konsultation der zuständigen Aufsichtsbehörde ist nicht erforderlich, wenn nach Umsetzung aller Maßnahmen kein hohes Restrisiko verbleibt.
+
+Bleibt insbesondere beim Drittlandtransfer (R2), bei besonderen Kategorien personenbezogener Daten (R6) oder bei Beschäftigtendaten ein hohes Restrisiko bestehen — etwa weil AVV/TIA nicht abgeschlossen werden können oder der DPF-Status negativ ausfällt — ist eine vorherige Konsultation der zuständigen Aufsichtsbehörde nach Art. 36 DSGVO zu prüfen.
 
 Zuständige Behörde: [BUNDESLAND-DATENSCHUTZBEHÖRDE EINTRAGEN]
 
@@ -191,6 +198,6 @@ Zuständige Behörde: [BUNDESLAND-DATENSCHUTZBEHÖRDE EINTRAGEN]
 
 ---
 
-*Diese DPIA-Vorlage wurde auf Basis der AILIZA-Systemarchitektur (Stand 18.06.2026) erstellt und juristisch überarbeitet (v1.1). Sie ersetzt keine individuelle Rechtsberatung. Bei Unsicherheiten einen auf Datenschutzrecht spezialisierten Rechtsanwalt oder den betrieblichen Datenschutzbeauftragten hinzuziehen.*
+*Diese DPIA-Vorlage wurde auf Basis der AILIZA-Systemarchitektur (Stand 18.06.2026) erstellt und juristisch überarbeitet (v1.3). Sie ersetzt keine individuelle Rechtsberatung. Bei Unsicherheiten einen auf Datenschutzrecht spezialisierten Rechtsanwalt oder den betrieblichen Datenschutzbeauftragten hinzuziehen.*
 
-*Regulatorischer Kontext: DSGVO (EU) 2016/679 · EU AI Act (EU) 2024/1689 · BDSG 2018 · DDG · TDDDG · EuGH C-311/18 (Schrems II) · EU-US Data Privacy Framework (Beschluss 2023/1795)*
+*Regulatorischer Kontext: DSGVO (EU) 2016/679 · Verordnung (EU) 2024/1689 (EU AI Act) · BDSG 2018 · DDG · TDDDG · EuGH C-311/18 (Schrems II) · Angemessenheitsbeschluss (EU) 2023/1795 (EU-US DPF)*
