@@ -138,7 +138,8 @@ def check_rate_limit(request: Request):
 
 class ChatRequest(BaseModel):
     session_id: str
-    message: str = Field(..., min_length=1, max_length=4000)
+    # 20000: PDF-Text (max 15000) + Dateiname-Header + Trennzeile + Nutzerfrage
+    message: str = Field(..., min_length=1, max_length=20000)
     model: str = Field(default="standard")
     eigene_anweisungen: str = Field(default="", max_length=1000)
 
