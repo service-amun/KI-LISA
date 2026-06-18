@@ -14,7 +14,8 @@ __pycache__/
 .Python
 *.egg-info/
 dist/
-build/
+# build/ enthält Build-Skripte (committen) — nur Ausgaben ignorieren:
+build/output/
 .venv/
 venv/
 

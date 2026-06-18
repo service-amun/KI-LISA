@@ -4,6 +4,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#2e7d32">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="AILIZA">
+<link rel="manifest" href="/static/manifest.json">
 <title>AILIZA — Ihr KI-Assistent</title>
 <style>
 /* ── Reset & Basis ─────────────────────────────────────────────────────── */
@@ -2448,5 +2454,10 @@ function escHtml(str) {
 </div>
 
 <div id="copyright" style="position:fixed;bottom:2px;right:8px;font-size:10px;color:#999;opacity:0.5;pointer-events:none;z-index:9999;">© 2026 Karola Fromm-Nasreldin | AILIZA</div>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/static/sw.js').catch(() => {});
+}
+</script>
 </body>
 </html>

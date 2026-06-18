@@ -76,6 +76,21 @@ def _icon_als_ico_speichern(pfad: Path):
     )
 
 
+# ── PWA-Icons für manifest.json generieren (einmalig) ───────────────────────
+
+def _pwa_icons_erstellen():
+    """Erstellt icon-192.png und icon-512.png im frontend-Verzeichnis."""
+    frontend = ROOT / "apps" / "frontend"
+    for groesse in (192, 512):
+        pfad = frontend / f"icon-{groesse}.png"
+        if not pfad.exists():
+            try:
+                img = _erstelle_icon(groesse)
+                img.save(pfad, format="PNG")
+            except Exception:
+                pass
+
+
 # ── Server im Hintergrund starten ────────────────────────────────────────────
 
 _server_bereit = threading.Event()
@@ -126,6 +141,9 @@ def _app_starten():
 
 
 if __name__ == "__main__":
+    # PWA-Icons erzeugen
+    _pwa_icons_erstellen()
+
     # Server starten
     t_server = threading.Thread(target=_server_thread, daemon=True)
     t_server.start()
