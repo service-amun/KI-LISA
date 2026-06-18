@@ -20,5 +20,5 @@
   "apps/backend/skills/guardrail_skill.py": "ff3975b9677312a2d2d0912209b8d36dd1e09faf30b5241a0e48b16531ff63f6",
   "apps/backend/skills/reflection_skill.py": "e7f1095fbf62c64310f5c047eb427cf44f55c364bc108daf8f4615c2f8917d1b",
   "apps/backend/compliance/weekly_checker.py": "c7138f08da3b6ce5600c87585633ea385e416125bdc1c7def6a660ab1c34b19a",
-  "requirements.txt": "656aa76ff8ef0da21c91711913da1e0d23111cfd2ada085df2966a61bc5be0ad"
+  "requirements.txt": "4ea5b6f3d87e4b8c7eca87dc0780df3c38938ee1bf7c73622693d556da7e9e14"
 }
