@@ -97,11 +97,13 @@ app = FastAPI(
     redoc_url=None,
 )
 
-# Lokaler Betrieb: nur localhost erlaubt. Railway: AILIZA_ALLOWED_ORIGIN setzen.
-_ALLOWED_ORIGIN = os.getenv("AILIZA_ALLOWED_ORIGIN", "http://127.0.0.1:8001")
+# Lokaler Betrieb: nur localhost erlaubt.
+# Railway/Cloud: AILIZA_ALLOWED_ORIGIN=* oder kommagetrennte Liste setzen.
+_origins_raw = os.getenv("AILIZA_ALLOWED_ORIGIN", "http://127.0.0.1:8001")
+_ALLOWED_ORIGINS = [o.strip() for o in _origins_raw.split(",") if o.strip()] or ["http://127.0.0.1:8001"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[_ALLOWED_ORIGIN],
+    allow_origins=_ALLOWED_ORIGINS,
     allow_credentials=False,
     allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["Content-Type", "Authorization"],
@@ -202,8 +204,13 @@ def public_config():
 
 # ── Dashboard ─────────────────────────────────────────────────────────────────
 
+_CLOUD = bool(os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("AILIZA_CLOUD_MODE"))
+
+
 def _setup_erforderlich() -> bool:
-    """True wenn Firmendaten noch nicht gesetzt sind."""
+    """True wenn Firmendaten noch nicht gesetzt sind. Nie im Cloud-Betrieb."""
+    if _CLOUD:
+        return False
     platzhalter = {"Ihr Unternehmen", "", "datenschutz@ihr-unternehmen.de"}
     name  = os.getenv("AILIZA_COMPANY_NAME", "Ihr Unternehmen").strip()
     email = os.getenv("AILIZA_DSB_EMAIL", "datenschutz@ihr-unternehmen.de").strip()
@@ -269,10 +276,14 @@ def setup_speichern(daten: SetupDaten):
     if daten.tavily_key and daten.tavily_key.startswith("tvly_"):
         _setze("TAVILY_API_KEY", daten.tavily_key)
 
-    try:
-        env_pfad.write_text("\n".join(zeilen) + "\n", encoding="utf-8")
-    except OSError as exc:
-        raise HTTPException(status_code=500, detail=f"Konnte .env nicht schreiben: {exc}") from exc
+    if _CLOUD:
+        # Im Cloud-Betrieb: ENV-Cache aktualisieren, kein .env schreiben
+        pass
+    else:
+        try:
+            env_pfad.write_text("\n".join(zeilen) + "\n", encoding="utf-8")
+        except OSError as exc:
+            raise HTTPException(status_code=500, detail=f"Konnte .env nicht schreiben: {exc}") from exc
 
     # ENV-Cache im laufenden Prozess sofort aktualisieren
     os.environ["AILIZA_COMPANY_NAME"] = daten.firmenname

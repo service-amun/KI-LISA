@@ -61,7 +61,7 @@ echo  Schritt 2 von 3: Pakete werden installiert ...
 echo.
 
 set PYTHONPATH=%ROOT%
-"%ROOT%_python\python.exe" -m pip install -r "%ROOT%requirements.txt" -q --disable-pip-version-check
+"%ROOT%_python\python.exe" -m pip install -r "%ROOT%requirements-desktop.txt" -q --disable-pip-version-check
 if errorlevel 1 (
     echo.
     echo  *** FEHLER beim Installieren der Pakete ***

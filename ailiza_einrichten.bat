@@ -20,7 +20,7 @@ echo.
 
 :: Pakete installieren
 echo  Installiere Pakete...
-"%PYTHON%" -m pip install -r requirements.txt -q --disable-pip-version-check
+"%PYTHON%" -m pip install -r requirements-desktop.txt -q --disable-pip-version-check
 if errorlevel 1 (
     echo  FEHLER: Pakete konnten nicht installiert werden.
     pause
