@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<!-- © 2026 Karola Fromm-Nasreldin | AILIZA — Alle Rechte vorbehalten -->
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AILIZA — Einrichtung</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --gruen:   #2e7d32;
+  --gruen-h: #e8f5e9;
+  --gruen-d: #1b5e20;
+  --grau-1:  #f5f7fa;
+  --grau-2:  #eef0f3;
+  --grau-3:  #dde1e7;
+  --grau-4:  #9ea8b3;
+  --grau-5:  #4a5568;
+  --schwarz: #1a202c;
+  --weiss:   #ffffff;
+  --radius:  12px;
+  --schatten: 0 4px 24px rgba(0,0,0,.10);
+}
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: linear-gradient(135deg, #f0f7f0 0%, #e8f0fa 100%);
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 2rem 1rem 4rem;
+  color: var(--schwarz);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* ── Logo ──────────────────────────────────────────────────────────────── */
+.logo-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2rem;
+}
+.logo-icon {
+  width: 56px;
+  height: 56px;
+  background: var(--gruen);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(46,125,50,.30);
+}
+.logo-icon svg { width: 30px; height: 30px; }
+.logo-name { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: var(--schwarz); }
+.logo-sub  { font-size: 13px; color: var(--grau-4); margin-top: -4px; }
+
+/* ── Karte ─────────────────────────────────────────────────────────────── */
+.karte {
+  background: var(--weiss);
+  border-radius: 20px;
+  box-shadow: var(--schatten);
+  width: 100%;
+  max-width: 500px;
+  overflow: hidden;
+}
+
+/* ── Schritt-Indikator ─────────────────────────────────────────────────── */
+.schritte {
+  display: flex;
+  align-items: center;
+  padding: 1.5rem 2rem 0;
+  gap: 0;
+}
+.schritt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+.schritt-kreis {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--grau-3);
+  background: var(--weiss);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--grau-4);
+  transition: all .25s;
+  position: relative;
+  z-index: 1;
+}
+.schritt.aktiv .schritt-kreis {
+  border-color: var(--gruen);
+  background: var(--gruen);
+  color: white;
+  box-shadow: 0 0 0 4px rgba(46,125,50,.15);
+}
+.schritt.fertig .schritt-kreis {
+  border-color: var(--gruen);
+  background: var(--gruen-h);
+  color: var(--gruen);
+}
+.schritt-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--grau-4);
+  text-align: center;
+  white-space: nowrap;
+}
+.schritt.aktiv .schritt-label { color: var(--gruen); }
+.schritt.fertig .schritt-label { color: var(--gruen); }
+.schritt-linie {
+  height: 2px;
+  background: var(--grau-3);
+  flex: 1;
+  margin-bottom: 20px;
+  transition: background .25s;
+}
+.schritt-linie.aktiv { background: var(--gruen); }
+
+/* ── Inhalt ─────────────────────────────────────────────────────────────── */
+.inhalt {
+  padding: 1.75rem 2rem 2rem;
+}
+.step-titel {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--schwarz);
+  margin-bottom: 4px;
+}
+.step-untertitel {
+  font-size: 13px;
+  color: var(--grau-4);
+  margin-bottom: 1.75rem;
+}
+
+/* ── Formular ───────────────────────────────────────────────────────────── */
+.feld-gruppe {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.feld-reihe {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .75rem;
+}
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.label-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--grau-5);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.label-text .opt {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--grau-4);
+  margin-left: 4px;
+  font-size: 11px;
+}
+input, textarea {
+  width: 100%;
+  padding: .65rem .85rem;
+  border: 1.5px solid var(--grau-3);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--schwarz);
+  background: var(--grau-1);
+  transition: border-color .15s, background .15s, box-shadow .15s;
+  outline: none;
+}
+input:focus, textarea:focus {
+  border-color: var(--gruen);
+  background: var(--weiss);
+  box-shadow: 0 0 0 3px rgba(46,125,50,.12);
+}
+input::placeholder, textarea::placeholder { color: var(--grau-4); }
+textarea { resize: vertical; min-height: 70px; }
+
+.hilfe-text {
+  font-size: 11.5px;
+  color: var(--grau-4);
+  margin-top: 3px;
+  line-height: 1.4;
+}
+.hilfe-text a { color: var(--gruen); text-decoration: none; }
+.hilfe-text a:hover { text-decoration: underline; }
+
+/* ── API-Key-Feld ────────────────────────────────────────────────────────── */
+.key-wrap {
+  position: relative;
+}
+.key-wrap input { padding-right: 2.5rem; }
+.key-toggle {
+  position: absolute;
+  right: .6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--grau-4);
+  padding: 4px;
+  display: flex;
+  align-items: center;
+}
+.key-toggle:hover { color: var(--gruen); }
+
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+.btn-reihe {
+  display: flex;
+  gap: .75rem;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 1rem;
+}
+.btn {
+  padding: .6rem 1.4rem;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  transition: background .15s, transform .1s, box-shadow .15s;
+}
+.btn:active { transform: scale(.97); }
+.btn-gruen {
+  background: var(--gruen);
+  color: white;
+  box-shadow: 0 2px 8px rgba(46,125,50,.30);
+}
+.btn-gruen:hover { background: var(--gruen-d); box-shadow: 0 4px 12px rgba(46,125,50,.35); }
+.btn-gruen:disabled { background: var(--grau-3); color: var(--grau-4); box-shadow: none; cursor: default; }
+.btn-ghost {
+  background: transparent;
+  color: var(--grau-4);
+  border: 1.5px solid var(--grau-3);
+}
+.btn-ghost:hover { color: var(--grau-5); border-color: var(--grau-4); }
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--grau-4);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  margin-right: auto;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+.btn-link:hover { color: var(--gruen); }
+
+/* ── Trennlinie ──────────────────────────────────────────────────────────── */
+.teiler {
+  border: none;
+  border-top: 1px solid var(--grau-2);
+  margin: 1.25rem 0;
+}
+
+/* ── Erfolg ──────────────────────────────────────────────────────────────── */
+.erfolg {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2.5rem 2rem;
+  gap: 1rem;
+}
+.erfolg.sichtbar { display: flex; }
+.erfolg-icon {
+  width: 64px;
+  height: 64px;
+  background: var(--gruen-h);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pop .4s cubic-bezier(.17,.67,.34,1.3);
+}
+@keyframes pop {
+  0%   { transform: scale(.4); opacity: 0; }
+  80%  { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.erfolg-titel { font-size: 20px; font-weight: 700; color: var(--schwarz); }
+.erfolg-text  { font-size: 14px; color: var(--grau-5); max-width: 340px; }
+.erfolg-liste {
+  background: var(--grau-1);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  width: 100%;
+  text-align: left;
+  font-size: 13px;
+  color: var(--grau-5);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.erfolg-liste-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.erfolg-liste-item::before {
+  content: "✓";
+  color: var(--gruen);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ── Fehlerhinweis ───────────────────────────────────────────────────────── */
+.fehler-banner {
+  display: none;
+  background: #fff3f3;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  padding: .6rem .9rem;
+  font-size: 13px;
+  color: #b91c1c;
+  margin-bottom: 1rem;
+}
+.fehler-banner.sichtbar { display: block; }
+
+/* ── Pflichtfeld-Markierung ──────────────────────────────────────────────── */
+.pflicht::after { content: " *"; color: #c62828; }
+</style>
+</head>
+<body>
+
+<div class="logo-wrap">
+  <div class="logo-icon">
+    <svg viewBox="0 0 30 30" fill="none">
+      <polygon points="15,3 24,24 6,24" fill="none" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
+      <line x1="9.5" y1="18" x2="20.5" y2="18" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div class="logo-name">AILIZA</div>
+  <div class="logo-sub">EU-konformer KI-Assistent für KMU</div>
+</div>
+
+<div class="karte" id="karte">
+
+  <!-- Schrittanzeige -->
+  <div class="schritte" id="schritte">
+    <div class="schritt aktiv" id="s1">
+      <div class="schritt-kreis" id="k1">1</div>
+      <div class="schritt-label">Firmendaten</div>
+    </div>
+    <div class="schritt-linie" id="linie"></div>
+    <div class="schritt" id="s2">
+      <div class="schritt-kreis" id="k2">2</div>
+      <div class="schritt-label">API-Zugänge</div>
+    </div>
+  </div>
+
+  <!-- Schritt 1 — Firmendaten -->
+  <div class="inhalt" id="step1">
+    <div class="step-titel">Firmendaten eingeben</div>
+    <div class="step-untertitel">Diese Angaben sind für die DSGVO-Konformität (Art. 13 + Art. 30) erforderlich.</div>
+
+    <div id="fehler1" class="fehler-banner"></div>
+
+    <div class="feld-gruppe">
+      <label>
+        <span class="label-text pflicht">Firmenname</span>
+        <input id="firmenname" type="text" placeholder="Muster GmbH" autocomplete="organization" required>
+      </label>
+
+      <div class="feld-reihe">
+        <label>
+          <span class="label-text pflicht">Straße + Hausnr.</span>
+          <input id="strasse" type="text" placeholder="Musterstraße 1" autocomplete="street-address" required>
+        </label>
+        <label>
+          <span class="label-text pflicht">PLZ + Stadt</span>
+          <input id="ort" type="text" placeholder="12345 Musterstadt" autocomplete="postal-code" required>
+        </label>
+      </div>
+
+      <label>
+        <span class="label-text pflicht">E-Mail des Verantwortlichen</span>
+        <input id="email" type="email" placeholder="info@muster-gmbh.de" autocomplete="email" required>
+        <span class="hilfe-text">Wird für DSGVO-Anfragen (Art. 17, 20) und den Audit-Trail verwendet.</span>
+      </label>
+
+      <hr class="teiler">
+
+      <label>
+        <span class="label-text">Datenschutzbeauftragter (DSB) <span class="opt">optional</span></span>
+        <input id="dsb_name" type="text" placeholder="Dr. Max Mustermann" autocomplete="name">
+        <span class="hilfe-text">Nur eintragen wenn ein DSB bestellt ist (ab 20 Mitarbeitende im Datenumgang: Pflicht).</span>
+      </label>
+
+      <label>
+        <span class="label-text">E-Mail DSB <span class="opt">optional</span></span>
+        <input id="dsb_email" type="email" placeholder="dsb@muster-gmbh.de" autocomplete="email">
+      </label>
+    </div>
+
+    <div class="btn-reihe">
+      <button class="btn btn-gruen" onclick="naechsterSchritt()">Weiter →</button>
+    </div>
+  </div>
+
+  <!-- Schritt 2 — API-Zugänge -->
+  <div class="inhalt" id="step2" style="display:none">
+    <div class="step-titel">KI-Zugang einrichten</div>
+    <div class="step-untertitel">AILIZA nutzt Groq als kostenlose KI-Schnittstelle. Der Schlüssel bleibt auf Ihrem Server — er wird niemals an Nutzer weitergegeben.</div>
+
+    <div id="fehler2" class="fehler-banner"></div>
+
+    <div class="feld-gruppe">
+      <label>
+        <span class="label-text pflicht">Groq API-Key</span>
+        <div class="key-wrap">
+          <input id="groq_key" type="password" placeholder="gsk_..." autocomplete="off" spellcheck="false">
+          <button class="key-toggle" onclick="toggleSichtbar('groq_key', this)" title="Anzeigen/Verbergen">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <span class="hilfe-text">Kostenlos unter <a href="https://console.groq.com" target="_blank">console.groq.com</a> → API Keys → Create API Key</span>
+      </label>
+
+      <hr class="teiler">
+
+      <label>
+        <span class="label-text">Tavily API-Key <span class="opt">optional — für Web-Suche</span></span>
+        <div class="key-wrap">
+          <input id="tavily_key" type="password" placeholder="tvly_..." autocomplete="off" spellcheck="false">
+          <button class="key-toggle" onclick="toggleSichtbar('tavily_key', this)" title="Anzeigen/Verbergen">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <span class="hilfe-text">Kostenlos unter <a href="https://app.tavily.com" target="_blank">app.tavily.com</a>. Ohne Tavily ist die Web-Suche deaktiviert.</span>
+      </label>
+    </div>
+
+    <div class="btn-reihe">
+      <button class="btn-link" onclick="schritt2Ueberspringen()">Später einrichten</button>
+      <button class="btn btn-ghost" onclick="vorherigerSchritt()">← Zurück</button>
+      <button class="btn btn-gruen" onclick="speichern()">Einrichtung abschließen</button>
+    </div>
+  </div>
+
+  <!-- Erfolg -->
+  <div class="erfolg" id="erfolg">
+    <div class="erfolg-icon">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2e7d32" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <div class="erfolg-titel">AILIZA ist eingerichtet!</div>
+    <div class="erfolg-text">Alle Angaben wurden gespeichert. Sie können AILIZA jetzt im Unternehmen einsetzen.</div>
+    <div class="erfolg-liste" id="erfolg-liste"></div>
+    <button class="btn btn-gruen" style="width:100%;margin-top:.5rem" onclick="zumDashboard()">
+      AILIZA öffnen →
+    </button>
+  </div>
+
+</div>
+
+<div style="margin-top:1.5rem;font-size:11px;color:var(--grau-4);text-align:center;max-width:460px">
+  AILIZA · EU AI Act Limited Risk (Art. 52) · DSGVO-konform · © 2026 Karola Fromm-Nasreldin
+</div>
+
+<script>
+let schritt = 1;
+
+function naechsterSchritt() {
+  const fehler = document.getElementById('fehler1');
+  fehler.classList.remove('sichtbar');
+
+  const fw = v => !document.getElementById(v).value.trim();
+  if (fw('firmenname') || fw('strasse') || fw('ort') || fw('email')) {
+    fehler.textContent = 'Bitte füllen Sie alle Pflichtfelder aus (mit * markiert).';
+    fehler.classList.add('sichtbar');
+    return;
+  }
+  const email = document.getElementById('email').value.trim();
+  if (!email.includes('@')) {
+    fehler.textContent = 'Bitte geben Sie eine gültige E-Mail-Adresse ein.';
+    fehler.classList.add('sichtbar');
+    return;
+  }
+
+  schritt = 2;
+  document.getElementById('step1').style.display = 'none';
+  document.getElementById('step2').style.display = 'block';
+  document.getElementById('s1').classList.remove('aktiv');
+  document.getElementById('s1').classList.add('fertig');
+  document.getElementById('k1').textContent = '✓';
+  document.getElementById('s2').classList.add('aktiv');
+  document.getElementById('linie').classList.add('aktiv');
+}
+
+function vorherigerSchritt() {
+  schritt = 1;
+  document.getElementById('step2').style.display = 'none';
+  document.getElementById('step1').style.display = 'block';
+  document.getElementById('s2').classList.remove('aktiv');
+  document.getElementById('s1').classList.remove('fertig');
+  document.getElementById('s1').classList.add('aktiv');
+  document.getElementById('k1').textContent = '1';
+  document.getElementById('linie').classList.remove('aktiv');
+}
+
+function schritt2Ueberspringen() {
+  document.getElementById('groq_key').value = '';
+  document.getElementById('tavily_key').value = '';
+  speichern();
+}
+
+async function speichern() {
+  const fehler = document.getElementById('fehler2');
+  fehler.classList.remove('sichtbar');
+
+  const groq = document.getElementById('groq_key').value.trim();
+  if (groq && !groq.startsWith('gsk_')) {
+    fehler.textContent = 'Groq API-Keys beginnen mit "gsk_". Bitte prüfen Sie die Eingabe.';
+    fehler.classList.add('sichtbar');
+    return;
+  }
+
+  const btn = document.querySelector('#step2 .btn-gruen');
+  btn.disabled = true;
+  btn.textContent = 'Wird gespeichert…';
+
+  const daten = {
+    firmenname: document.getElementById('firmenname').value.trim(),
+    adresse:    document.getElementById('strasse').value.trim() + ', ' + document.getElementById('ort').value.trim(),
+    email:      document.getElementById('email').value.trim(),
+    dsb_name:   document.getElementById('dsb_name').value.trim(),
+    dsb_email:  document.getElementById('dsb_email').value.trim(),
+    groq_key:   groq,
+    tavily_key: document.getElementById('tavily_key').value.trim(),
+  };
+
+  try {
+    const r = await fetch('/setup/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(daten),
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.detail || 'Unbekannter Fehler');
+    zeigeErfolg(daten);
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Einrichtung abschließen';
+    fehler.textContent = 'Fehler beim Speichern: ' + err.message;
+    fehler.classList.add('sichtbar');
+  }
+}
+
+function zeigeErfolg(d) {
+  document.getElementById('schritte').style.display = 'none';
+  document.getElementById('step2').style.display = 'none';
+  const erfolg = document.getElementById('erfolg');
+  const liste  = document.getElementById('erfolg-liste');
+
+  const punkte = [
+    `Firma: ${d.firmenname}`,
+    `Adresse: ${d.adresse}`,
+    `Verantwortliche E-Mail: ${d.email}`,
+    d.dsb_name ? `DSB: ${d.dsb_name}` : 'Kein DSB eingetragen (optional)',
+    d.groq_key ? 'Groq API-Key gespeichert' : 'Groq API-Key nicht gesetzt (später eintragbar)',
+    d.tavily_key ? 'Tavily Web-Suche aktiv' : 'Tavily nicht gesetzt (Web-Suche deaktiviert)',
+  ];
+  liste.innerHTML = punkte.map(p =>
+    `<div class="erfolg-liste-item">${p}</div>`
+  ).join('');
+
+  erfolg.classList.add('sichtbar');
+}
+
+function zumDashboard() {
+  window.location.href = '/dashboard';
+}
+
+function toggleSichtbar(id, btn) {
+  const el = document.getElementById(id);
+  const versteckt = el.type === 'password';
+  el.type = versteckt ? 'text' : 'password';
+  btn.title = versteckt ? 'Verbergen' : 'Anzeigen';
+}
+</script>
+</body>
+</html>

@@ -14,7 +14,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -201,13 +201,85 @@ def public_config():
 
 # ── Dashboard ─────────────────────────────────────────────────────────────────
 
+def _setup_erforderlich() -> bool:
+    """True wenn Firmendaten noch nicht gesetzt sind."""
+    platzhalter = {"Ihr Unternehmen", "", "datenschutz@ihr-unternehmen.de"}
+    name  = os.getenv("AILIZA_COMPANY_NAME", "Ihr Unternehmen").strip()
+    email = os.getenv("AILIZA_DSB_EMAIL", "datenschutz@ihr-unternehmen.de").strip()
+    return name in platzhalter or email in platzhalter
+
+
 @app.get("/dashboard")
 @app.get("/")
 def dashboard():
+    if _setup_erforderlich():
+        return RedirectResponse(url="/setup", status_code=302)
     index = FRONTEND_DIR / "index.html"
     if index.exists():
         return FileResponse(str(index))
     return JSONResponse({"info": "AILIZA Backend läuft. Frontend unter apps/frontend/index.html einrichten."})
+
+
+@app.get("/setup")
+def setup_seite():
+    seite = FRONTEND_DIR / "setup.html"
+    if seite.exists():
+        return FileResponse(str(seite))
+    return JSONResponse({"fehler": "setup.html nicht gefunden."}, status_code=404)
+
+
+class SetupDaten(BaseModel):
+    firmenname: str = Field(..., min_length=2, max_length=200)
+    adresse:    str = Field(..., min_length=4, max_length=300)
+    email:      str = Field(..., min_length=5, max_length=200)
+    dsb_name:   str = Field("", max_length=200)
+    dsb_email:  str = Field("", max_length=200)
+    groq_key:   str = Field("", max_length=200)
+    tavily_key: str = Field("", max_length=200)
+
+
+@app.post("/setup/save")
+def setup_speichern(daten: SetupDaten):
+    """Schreibt Firmendaten und optionale API-Keys in apps/backend/.env."""
+    env_pfad = Path(__file__).parent / ".env"
+
+    # Bestehende .env lesen (damit vorhandene Keys erhalten bleiben)
+    zeilen: list[str] = []
+    if env_pfad.exists():
+        zeilen = env_pfad.read_text(encoding="utf-8").splitlines()
+
+    def _setze(key: str, wert: str):
+        escaped = wert.replace('"', '\\"')
+        for i, z in enumerate(zeilen):
+            if z.startswith(f"{key}=") or z.startswith(f"{key} ="):
+                zeilen[i] = f'{key}="{escaped}"'
+                return
+        zeilen.append(f'{key}="{escaped}"')
+
+    _setze("AILIZA_COMPANY_NAME", daten.firmenname)
+    _setze("AILIZA_COMPANY_ADDRESS", daten.adresse)
+    _setze("AILIZA_CONTACT_EMAIL", daten.email)
+    if daten.dsb_name:
+        _setze("AILIZA_DSB_NAME", daten.dsb_name)
+    if daten.dsb_email:
+        _setze("AILIZA_DSB_EMAIL", daten.dsb_email)
+    if daten.groq_key and daten.groq_key.startswith("gsk_"):
+        _setze("GROQ_API_KEY", daten.groq_key)
+    if daten.tavily_key and daten.tavily_key.startswith("tvly_"):
+        _setze("TAVILY_API_KEY", daten.tavily_key)
+
+    try:
+        env_pfad.write_text("\n".join(zeilen) + "\n", encoding="utf-8")
+    except OSError as exc:
+        raise HTTPException(status_code=500, detail=f"Konnte .env nicht schreiben: {exc}") from exc
+
+    # ENV-Cache im laufenden Prozess sofort aktualisieren
+    os.environ["AILIZA_COMPANY_NAME"] = daten.firmenname
+    os.environ["AILIZA_CONTACT_EMAIL"] = daten.email
+    if daten.dsb_email:
+        os.environ["AILIZA_DSB_EMAIL"] = daten.dsb_email
+
+    return {"ok": True, "firmenname": daten.firmenname}
 
 
 # ── Sessions (Chat mit Compliance-Kontext) ─────────────────────────────────────
