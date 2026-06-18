@@ -7,5 +7,5 @@
   "apps/backend/skills/guardrail_skill.py": "ff3975b9677312a2d2d0912209b8d36dd1e09faf30b5241a0e48b16531ff63f6",
   "apps/backend/skills/reflection_skill.py": "e7f1095fbf62c64310f5c047eb427cf44f55c364bc108daf8f4615c2f8917d1b",
   "apps/backend/compliance/weekly_checker.py": "c7138f08da3b6ce5600c87585633ea385e416125bdc1c7def6a660ab1c34b19a",
-  "apps/frontend/index.html": "82ba521047dcae9871d4ef2212f45fcf834ec77539b0504d5548bda3e2b94c1f"
+  "apps/frontend/index.html": "f7b0d0fb9dcfc1e05236b1310e8763116bdb717e498899249946cdbf33731b03"
 }

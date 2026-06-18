@@ -94,11 +94,17 @@ async def datei_hochladen(datei: UploadFile = File(...)):
     elif endung == "txt":
         text = daten.decode("utf-8", errors="replace")[:15000]
         typ = "text"
+    elif endung == "html":
+        import re as _re
+        raw = daten.decode("utf-8", errors="replace")
+        text = _re.sub(r"<[^>]+>", " ", raw)
+        text = _re.sub(r"\s{2,}", " ", text).strip()[:15000]
+        typ = "text"
     elif endung in ("jpg", "jpeg", "png", "webp", "bmp"):
         text = _bild_info(daten, name)
         typ = "bild"
     else:
-        raise HTTPException(415, f"Dateityp '.{endung}' wird nicht unterstützt. Erlaubt: PDF, Word, Excel, CSV, TXT, JPG, PNG")
+        raise HTTPException(415, f"Dateityp '.{endung}' wird nicht unterstützt. Erlaubt: PDF, Word, Excel, CSV, TXT, HTML, JPG, PNG")
 
     return {
         "dateiname": name,
