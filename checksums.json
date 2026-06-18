@@ -6,7 +6,7 @@
   "apps/backend/compliance/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "apps/backend/audit/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "apps/backend/tools/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "apps/frontend/index.html": "476e982ed5b64b55587136af008e54a2766eb4a39b1a867d12fa8bde44052218",
+  "apps/frontend/index.html": "3ea420c8c017a2b312dee967eb9a02d0283436fd848047bd8c37115e2275d570",
   "apps/frontend/setup.html": "46bffa786889ecad59efc7b917ab7939f1181aaddc8800e87617afdf1500699f",
   "apps/backend/main.py": "629d3a200bdfa155d85e9faefbf44a89e9038d4b40dfdeff9da72f79e75cc50e",
   "apps/backend/groq_client.py": "2a5507c9049a66f325da2a8e8135560f52b7b9396c3a58885716659c9e9157dc",

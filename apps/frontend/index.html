@@ -250,7 +250,7 @@ body {
   -webkit-user-select: text !important;
 }
 .msg-kopieren {
-  display: none;
+  display: inline-block;
   background: none;
   border: 1px solid var(--grau-3);
   border-radius: 7px;
@@ -261,7 +261,6 @@ body {
   margin-top: 5px;
   transition: all .12s;
 }
-.msg-ki:hover .msg-kopieren { display: inline-block; }
 .msg-kopieren:hover { background: var(--grau-2); color: var(--schwarz); }
 .msg-outlook {
   display: inline-block;
@@ -1084,7 +1083,7 @@ body {
               ➤
             </button>
           </div>
-          <div class="eingabe-hinweis">Enter = Senden &nbsp;·&nbsp; Shift + Enter = neue Zeile</div>
+          <div class="eingabe-hinweis">Enter = Senden &nbsp;·&nbsp; Shift + Enter = neue Zeile &nbsp;·&nbsp; <button onclick="einfuegen()" style="background:none;border:none;color:var(--grau-4);font-size:12px;cursor:pointer;padding:0;text-decoration:underline;text-decoration-style:dotted;" title="Text aus Zwischenablage einfügen">📋 Einfügen</button></div>
         </div>
       </div>
     </div>
@@ -1851,22 +1850,52 @@ function nachrichtBearbeiten(btn) {
 function nachrichtKopieren(btn) {
   const blase = btn.closest('.msg-ki').querySelector('.msg-blase');
   const text = (blase.innerText || blase.textContent).trim();
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(text).then(() => {
-      btn.textContent = '✓ Kopiert'; btn.style.color = 'var(--gruen)';
-      setTimeout(() => { btn.textContent = '📋 Kopieren'; btn.style.color = ''; }, 1800);
-    }).catch(() => _execCopy(text, btn));
+  const erfolg = () => {
+    btn.textContent = '✓ Kopiert'; btn.style.color = 'var(--gruen)';
+    setTimeout(() => { btn.textContent = '📋 Kopieren'; btn.style.color = ''; }, 2000);
+  };
+  const misserfolg = () => {
+    btn.textContent = '⚠ Fehler'; btn.style.color = 'var(--orange)';
+    setTimeout(() => { btn.textContent = '📋 Kopieren'; btn.style.color = ''; }, 2000);
+  };
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(erfolg).catch(() => _execCopy(text, erfolg, misserfolg));
   } else {
-    _execCopy(text, btn);
+    _execCopy(text, erfolg, misserfolg);
   }
 }
-function _execCopy(text, btn) {
+function _execCopy(text, erfolg, misserfolg) {
   const ta = document.createElement('textarea');
   ta.value = text;
-  ta.style.cssText = 'position:fixed;top:0;left:0;width:2px;height:2px;opacity:0;';
-  document.body.appendChild(ta); ta.focus(); ta.select();
-  try { document.execCommand('copy'); btn.textContent = '✓ Kopiert'; btn.style.color = 'var(--gruen)'; setTimeout(() => { btn.textContent = '📋 Kopieren'; btn.style.color = ''; }, 1800); } catch(e) {}
+  ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0;';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  const ok = document.execCommand('copy');
   document.body.removeChild(ta);
+  if (ok) { erfolg(); } else { misserfolg(); }
+}
+
+async function einfuegen() {
+  const ta = document.getElementById('eingabe');
+  try {
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      const text = await navigator.clipboard.readText();
+      const start = ta.selectionStart, end = ta.selectionEnd;
+      const vorher = ta.value.substring(0, start);
+      const nachher = ta.value.substring(end);
+      ta.value = vorher + text + nachher;
+      ta.selectionStart = ta.selectionEnd = start + text.length;
+    } else {
+      ta.focus();
+      document.execCommand('paste');
+    }
+    groessePassen(ta);
+    ta.focus();
+  } catch {
+    ta.focus();
+    alert('Einfügen nicht möglich. Bitte Strg+V (Windows) oder Cmd+V (Mac) verwenden.');
+  }
 }
 
 function inWhatsappOeffnen(btn) {
