@@ -129,6 +129,10 @@ class NewSessionRequest(BaseModel):
     title: str = Field(default="Neuer Chat", max_length=100)
 
 
+class PinRequest(BaseModel):
+    pin: str = Field(..., min_length=1, max_length=50)
+
+
 class AgentRunRequest(BaseModel):
     task: str = Field(..., min_length=1, max_length=2000)
 
@@ -143,6 +147,37 @@ def health():
         "ki_konfiguriert": groq_client.is_configured(),
         "compliance": "EU AI Act Art. 52 · DSGVO konform",
         "risikoklasse": "Limited Risk",
+    }
+
+
+# ── Auth (optionaler Zugangscode) ────────────────────────────────────────────
+
+@app.get("/auth/required")
+def auth_required():
+    """Teilt dem Frontend mit ob ein Zugangscode konfiguriert ist."""
+    return {"required": bool(os.getenv("AILIZA_ACCESS_PIN", ""))}
+
+
+@app.post("/auth/verify")
+def auth_verify(body: PinRequest, request: Request):
+    """Prüft den Zugangscode. Timing-sicher via hmac.compare_digest."""
+    pin = os.getenv("AILIZA_ACCESS_PIN", "")
+    if not pin:
+        return {"ok": True}
+    if not hmac.compare_digest(body.pin.encode(), pin.encode()):
+        write_audit_entry("auth.failed", {"ip": request.client.host if request.client else None})
+        raise HTTPException(status_code=401, detail="Falscher Zugangscode.")
+    write_audit_entry("auth.login", {"ip": request.client.host if request.client else None})
+    return {"ok": True}
+
+
+@app.get("/config/public")
+def public_config():
+    """Öffentliche Konfiguration für das Frontend — Datenschutzmodaltext."""
+    return {
+        "company_name": os.getenv("AILIZA_COMPANY_NAME", "Ihr Unternehmen"),
+        "dsb_email": os.getenv("AILIZA_DSB_EMAIL", "datenschutz@ihr-unternehmen.de"),
+        "retention_days": int(os.getenv("AILIZA_DATA_RETENTION_DAYS", "90")),
     }
 
 

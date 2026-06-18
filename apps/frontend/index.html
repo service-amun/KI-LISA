@@ -881,6 +881,62 @@ body {
 
 /* ── Hilfreich ─────────────────────────────────────────────────────────── */
 .verborgen { display: none !important; }
+
+/* ── Auth & DSGVO Overlays ─────────────────────────────────────────────── */
+.ov-vorhang {
+  position: fixed; inset: 0;
+  background: rgba(15,15,15,.6);
+  backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9000;
+}
+.ov-karte {
+  background: var(--weiss);
+  border-radius: 22px;
+  padding: 2.2rem 2.5rem 2rem;
+  max-width: 460px; width: 92%;
+  box-shadow: 0 12px 50px rgba(0,0,0,.28);
+}
+.ov-logo {
+  width: 54px; height: 54px;
+  background: var(--schwarz); border-radius: 15px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; color: white; margin: 0 auto .9rem;
+}
+.ov-titel { font-size: 21px; font-weight: 700; text-align: center; margin-bottom: .25rem; }
+.ov-sub   { font-size: 13px; color: var(--grau-4); text-align: center; margin-bottom: 1.5rem; }
+.ov-pin {
+  width: 100%; padding: 13px 16px;
+  border: 2px solid var(--grau-3); border-radius: 13px;
+  font-size: 22px; letter-spacing: 6px; text-align: center;
+  outline: none; margin-bottom: .75rem; transition: border-color .2s;
+}
+.ov-pin:focus { border-color: var(--schwarz); }
+.ov-btn {
+  width: 100%; padding: 13px;
+  background: var(--schwarz); color: white;
+  border: none; border-radius: 13px;
+  font-size: 15px; font-weight: 600; cursor: pointer;
+  transition: opacity .15s;
+}
+.ov-btn:hover { opacity: .82; }
+.ov-btn:disabled { opacity: .4; cursor: not-allowed; }
+.ov-fehler { color: var(--rot); font-size: 13px; text-align: center; margin-top: .5rem; min-height: 1.4em; }
+.dsgvo-text {
+  font-size: 13px; line-height: 1.7; color: var(--grau-5);
+  max-height: 260px; overflow-y: auto;
+  border: 1px solid var(--grau-3); border-radius: 11px;
+  padding: 12px 14px; margin-bottom: 1rem;
+  scrollbar-width: thin;
+}
+.dsgvo-text h4 { font-size: 13px; font-weight: 700; margin: .8rem 0 .2rem; color: var(--schwarz); }
+.dsgvo-text h4:first-child { margin-top: 0; }
+.dsgvo-text p { margin-bottom: .3rem; }
+.dsgvo-check {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 13px; line-height: 1.5; margin-bottom: 1.1rem; cursor: pointer;
+}
+.dsgvo-check input { margin-top: 2px; flex-shrink: 0; accent-color: var(--schwarz); }
 </style>
 </head>
 <body>
@@ -1284,12 +1340,99 @@ const SKILLS = [
   },
 ];
 
+// ── App-Start (PIN → DSGVO → Hauptanwendung) ─────────────────────────────
+async function appStart() {
+  // Schritt 1: Zugangscode prüfen (wenn konfiguriert und noch nicht in Session)
+  if (sessionStorage.getItem('ailiza_auth') !== '1') {
+    const cfg = await fetch(`${API}/auth/required`).then(r => r.json()).catch(() => ({required: false}));
+    if (cfg.required) {
+      document.getElementById('pin-overlay').style.display = 'flex';
+      setTimeout(() => document.getElementById('pin-eingabe').focus(), 80);
+      return;
+    }
+  }
+  // Schritt 2: DSGVO-Ersthinweis (nur einmal pro Browser — Art. 13)
+  if (!localStorage.getItem('ailiza_dsgvo_ok')) {
+    await dsgvoAnzeigen();
+    return;
+  }
+  // Schritt 3: Normale Initialisierung
+  appInitMain();
+}
+
+async function pinAbsenden() {
+  const pin = document.getElementById('pin-eingabe').value;
+  const fehlerEl = document.getElementById('pin-fehler');
+  fehlerEl.textContent = '';
+  try {
+    const r = await fetch(`${API}/auth/verify`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({pin}),
+    });
+    if (r.ok) {
+      sessionStorage.setItem('ailiza_auth', '1');
+      document.getElementById('pin-overlay').style.display = 'none';
+      if (!localStorage.getItem('ailiza_dsgvo_ok')) {
+        await dsgvoAnzeigen();
+      } else {
+        appInitMain();
+      }
+    } else {
+      fehlerEl.textContent = 'Falscher Zugangscode — bitte erneut versuchen.';
+      document.getElementById('pin-eingabe').value = '';
+      document.getElementById('pin-eingabe').focus();
+    }
+  } catch {
+    fehlerEl.textContent = 'Server nicht erreichbar. Bitte AILIZA neu starten.';
+  }
+}
+
+async function dsgvoAnzeigen() {
+  const overlay = document.getElementById('dsgvo-overlay');
+  const inhalt  = document.getElementById('dsgvo-inhalt');
+  const cfg = await fetch(`${API}/config/public`).then(r => r.json()).catch(() => ({
+    company_name: 'Ihr Unternehmen',
+    dsb_email: 'datenschutz@ihr-unternehmen.de',
+    retention_days: 90,
+  }));
+  inhalt.innerHTML = `
+    <h4>Verantwortlicher</h4>
+    <p>${escHtml(cfg.company_name)}<br>Datenschutzbeauftragter / Kontakt: <strong>${escHtml(cfg.dsb_email)}</strong></p>
+    <h4>Zweck &amp; Rechtsgrundlage</h4>
+    <p>AILIZA verarbeitet Ihre Texteingaben zur KI-gestützten Büroassistenz. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO (Durchführung eines Vertrages / Beschäftigungsverhältnis).</p>
+    <h4>Empfänger &amp; Drittlandübermittlung</h4>
+    <p>Ihre Eingaben werden zur Verarbeitung an <strong>Groq Inc., USA</strong> übertragen. Groq verarbeitet Anfragen auf Basis von EU-Standardvertragsklauseln (Art. 46 DSGVO) und speichert keine Eingaben dauerhaft.</p>
+    <h4>Speicherdauer</h4>
+    <p>Chat-Verläufe werden nach <strong>${cfg.retention_days} Tagen</strong> automatisch gelöscht. Sie können Ihren Verlauf jederzeit selbst löschen (Menü → 🗑 Verlauf löschen).</p>
+    <h4>Ihre Rechte (DSGVO)</h4>
+    <p>Auskunft (Art. 15) · Berichtigung (Art. 16) · Löschung (Art. 17) · Portabilität (Art. 20) · Widerspruch (Art. 21) — Anfragen an: ${escHtml(cfg.dsb_email)}</p>
+    <h4>Keine automatisierten Entscheidungen</h4>
+    <p>AILIZA trifft keine automatisierten Entscheidungen mit rechtlicher Wirkung (Art. 22 DSGVO). Bei Hochrisiko-Anfragen ist immer eine Fachkraft hinzuzuziehen (EU AI Act Art. 14).</p>
+  `;
+  overlay.style.display = 'flex';
+}
+
+function dsgvoBtnAktualisieren() {
+  document.getElementById('dsgvo-btn').disabled = !document.getElementById('dsgvo-cb').checked;
+}
+
+function dsgvoBestaetigen() {
+  localStorage.setItem('ailiza_dsgvo_ok', '1');
+  document.getElementById('dsgvo-overlay').style.display = 'none';
+  appInitMain();
+}
+
+function appInitMain() {
+  statusPruefen();
+  chatListeLaden();
+  fristerechnen();
+  einstellungenIndikatorAktualisieren();
+  setInterval(statusPruefen, 20000);
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────
-statusPruefen();
-chatListeLaden();
-fristerechnen();
-einstellungenIndikatorAktualisieren();
-setInterval(statusPruefen, 20000);
+appStart();
 
 // ── Navigation ────────────────────────────────────────────────────────────
 function zeigSeite(name, el) {
@@ -2175,6 +2318,39 @@ function escHtml(str) {
     .replace(/"/g, '&quot;');
 }
 </script>
+<!-- ── PIN-Zugriffsschutz Overlay ─────────────────────────────────────── -->
+<div id="pin-overlay" class="ov-vorhang" style="display:none">
+  <div class="ov-karte">
+    <div class="ov-logo">🤖</div>
+    <div class="ov-titel">AILIZA</div>
+    <div class="ov-sub">Bitte geben Sie den Zugangscode ein</div>
+    <input type="password" class="ov-pin" id="pin-eingabe"
+      placeholder="••••••" maxlength="50" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter') pinAbsenden()">
+    <button class="ov-btn" onclick="pinAbsenden()">Anmelden</button>
+    <div class="ov-fehler" id="pin-fehler"></div>
+  </div>
+</div>
+
+<!-- ── DSGVO Ersthinweis Overlay (Art. 13 DSGVO) ─────────────────────── -->
+<div id="dsgvo-overlay" class="ov-vorhang" style="display:none">
+  <div class="ov-karte">
+    <div class="ov-logo">🛡️</div>
+    <div class="ov-titel">Datenschutzhinweis</div>
+    <div class="ov-sub">Bitte lesen Sie diesen Hinweis vor der ersten Nutzung</div>
+    <div class="dsgvo-text" id="dsgvo-inhalt">
+      <p>Wird geladen…</p>
+    </div>
+    <label class="dsgvo-check">
+      <input type="checkbox" id="dsgvo-cb" onchange="dsgvoBtnAktualisieren()">
+      <span>Ich habe den Datenschutzhinweis gelesen und bin mit der beschriebenen Verarbeitung einverstanden.</span>
+    </label>
+    <button class="ov-btn" id="dsgvo-btn" onclick="dsgvoBestaetigen()" disabled>
+      Verstanden — AILIZA starten
+    </button>
+  </div>
+</div>
+
 <div id="copyright" style="position:fixed;bottom:2px;right:8px;font-size:10px;color:#999;opacity:0.5;pointer-events:none;z-index:9999;">© 2026 Karola Fromm-Nasreldin | AILIZA</div>
 </body>
 </html>
