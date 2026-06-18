@@ -980,7 +980,8 @@ body {
         <div class="eingabe-wrapper">
           <div class="eingabe-sperre" id="eingabe-sperre">
             <span>⚠️</span>
-            <span id="sperre-text">Bitte bestätigen Sie den Hinweis oben, bevor Sie weiterschreiben.</span>
+            <span id="sperre-text" style="flex:1">Bitte bestätigen Sie den Hinweis oben, bevor Sie weiterschreiben.</span>
+            <button onclick="zumHinweisScrollen()" style="background:none;border:1.5px solid currentColor;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer;color:inherit;white-space:nowrap;flex-shrink:0">↑ Zum Hinweis</button>
           </div>
           <div id="datei-vorschau-bereich"></div>
           <div class="eingabe-feld" id="eingabe-feld">
@@ -992,12 +993,13 @@ body {
               <div class="plus-menu" id="plus-menu">
                 <button class="plus-menu-item" onclick="plusMenuDatei()"><span class="plus-menu-ico">📎</span> Datei hochladen</button>
                 <div class="plus-menu-trenn"></div>
-                <button class="plus-menu-item" onclick="plusMenuAktion('📧 E-Mail an: ')"><span class="plus-menu-ico">📧</span> Outlook E-Mail</button>
-                <button class="plus-menu-item" onclick="plusMenuAktion('📅 Termin erstellen: ')"><span class="plus-menu-ico">📅</span> Outlook Kalender</button>
-                <button class="plus-menu-item" onclick="plusMenuAktion('📁 Fasse dieses Google Drive Dokument zusammen: ')"><span class="plus-menu-ico">📁</span> Google Drive</button>
-                <button class="plus-menu-item" onclick="plusMenuAktion('💬 Schreibe eine Slack-Nachricht an: ')"><span class="plus-menu-ico">💬</span> Slack / Teams</button>
-                <button class="plus-menu-item" onclick="plusMenuAktion('📱 Schreibe eine WhatsApp-Nachricht an: ')"><span class="plus-menu-ico">📱</span> WhatsApp</button>
-                <button class="plus-menu-item" onclick="plusMenuAktion('📒 Erstelle eine Notion-Notiz über: ')"><span class="plus-menu-ico">📒</span> Notion</button>
+                <div style="padding:4px 14px 2px;font-size:11px;color:var(--grau-4);font-weight:600;letter-spacing:.5px">TEXTHILFEN (Vorlage einfügen)</div>
+                <button class="plus-menu-item" onclick="plusMenuAktion('Schreibe eine E-Mail an: ')"><span class="plus-menu-ico">📧</span> Outlook E-Mail</button>
+                <button class="plus-menu-item" onclick="plusMenuAktion('Erstelle einen Terminvorschlag für: ')"><span class="plus-menu-ico">📅</span> Kalender-Einladung</button>
+                <button class="plus-menu-item" onclick="plusMenuAktion('Fasse dieses Dokument zusammen (URL): ')"><span class="plus-menu-ico">📁</span> Dokument-URL</button>
+                <button class="plus-menu-item" onclick="plusMenuAktion('Schreibe eine kurze Nachricht für Slack/Teams an: ')"><span class="plus-menu-ico">💬</span> Slack / Teams</button>
+                <button class="plus-menu-item" onclick="plusMenuAktion('Schreibe eine WhatsApp-Nachricht an: ')"><span class="plus-menu-ico">📱</span> WhatsApp</button>
+                <button class="plus-menu-item" onclick="plusMenuAktion('Erstelle eine Notiz über: ')"><span class="plus-menu-ico">📒</span> Notiz</button>
               </div>
             </div>
             <textarea
@@ -1103,8 +1105,11 @@ body {
         <div class="karte">
           <div class="karte-titel" style="display:flex;justify-content:space-between;align-items:center">
             Gesetzliche Aktualisierungen (DSGVO &amp; EU AI Act)
-            <button class="btn-haupt" style="font-size:12px;padding:6px 14px"
-              onclick="gesetzCheckStarten(this)">Jetzt prüfen</button>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span id="eurlex-status" style="font-size:12px;font-weight:500;color:var(--grau-4)">— Noch nicht geprüft</span>
+              <button class="btn-haupt" style="font-size:12px;padding:6px 14px"
+                onclick="gesetzCheckStarten(this)">Jetzt prüfen</button>
+            </div>
           </div>
           <div id="updates-liste"><div class="leer"><div class="leer-icon">📋</div>Noch kein Prüflauf. Klicken Sie auf „Jetzt prüfen".</div></div>
         </div>
@@ -1389,7 +1394,7 @@ async function neuerChat() {
 
 async function alleChatsLoeschen() {
   try {
-    const r = await fetch(`${API}/sessions`);
+    const r = await fetch(`${API}/sessions?limit=1000`);
     if (r.ok) {
       const sessions = await r.json();
       await Promise.all(sessions.map(s =>
@@ -1885,13 +1890,22 @@ async function statusLaden() {
       document.getElementById('fortschritt').style.width = Math.min(100, Math.round((1 - tage / gesamt) * 100)) + '%';
     }
 
-    // EUR-Lex Änderungen
+    // EUR-Lex Änderungen + Erreichbarkeit anzeigen
     if (complR && complR.gesetzes_aenderungen && complR.gesetzes_aenderungen.length > 0) {
       const chip = document.getElementById('risiko-chip');
       chip.className = 'risk-chip risk-medium';
       chip.innerHTML = `<span>⚠️</span> Gesetzesänderung erkannt`;
       document.getElementById('compliance-text').textContent =
         `Bitte prüfen: ${complR.gesetzes_aenderungen.join(', ')} wurde aktualisiert`;
+    }
+    if (complR && complR.eurlex_status) {
+      const el = document.getElementById('eurlex-status');
+      if (el) {
+        const s = complR.eurlex_status;
+        el.textContent = s.erreichbar ? '✓ EUR-Lex erreichbar' : (s.geprueft ? '⚠ EUR-Lex nicht erreichbar' : '— Noch nicht geprüft');
+        el.style.color = s.erreichbar ? 'var(--gruen)' : 'var(--orange)';
+        el.title = s.hinweis;
+      }
     }
 
     document.getElementById('k-runs').textContent  = runs.length;
@@ -2054,6 +2068,17 @@ async function ueberwachungBestaetigen(btn) {
   }
   eingabeFreigeben();
   btn.closest('.pruefung-banner').style.opacity = '.5';
+}
+
+function zumHinweisScrollen() {
+  const container = document.getElementById('nachrichten');
+  if (!container) return;
+  const banner = [...container.querySelectorAll('.pruefung-banner')].pop();
+  if (banner) {
+    banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } else {
+    container.scrollTop = container.scrollHeight;
+  }
 }
 
 // ── Datei-Upload ──────────────────────────────────────────────────────────

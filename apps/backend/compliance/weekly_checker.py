@@ -35,6 +35,16 @@ def bericht() -> dict:
     eurlex = eurlex_status()
     geaenderungen = [k for k, v in eurlex.items() if isinstance(v, dict) and v.get("geaendert")]
 
+    # Erreichbarkeit: letzte Prüfung erfolgreich wenn last_modified vorhanden
+    eurlex_geprueft = any(
+        isinstance(v, dict) and v.get("letzter_check")
+        for v in eurlex.values()
+    )
+    eurlex_erreichbar = any(
+        isinstance(v, dict) and v.get("last_modified") and v["last_modified"] != "unbekannt"
+        for v in eurlex.values()
+    )
+
     return {
         "erstellt": datetime.now(timezone.utc).isoformat(),
         "risikoklasse": "Limited Risk (EU AI Act Art. 52)",
@@ -44,8 +54,18 @@ def bericht() -> dict:
             "status": "ok" if frist_ok else "abgelaufen",
         },
         "checkliste": CHECKLISTE,
+        "checkliste_hinweis": "Design-Level-Prüfung (statisch) — Architektur und Konfiguration bestätigt",
         "alle_ok": all(p["status"] == "ok" for p in CHECKLISTE),
         "eurlex": eurlex,
+        "eurlex_status": {
+            "geprueft": eurlex_geprueft,
+            "erreichbar": eurlex_erreichbar,
+            "hinweis": (
+                "EUR-Lex zuletzt erfolgreich geprüft" if eurlex_erreichbar
+                else ("Noch nicht geprüft — POST /compliance/check aufrufen" if not eurlex_geprueft
+                else "EUR-Lex nicht erreichbar — kein Internet oder EUR-Lex offline")
+            ),
+        },
         "gesetzes_aenderungen": geaenderungen,
         "handlungsbedarf": (
             geaenderungen or

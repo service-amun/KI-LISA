@@ -160,8 +160,8 @@ def dashboard():
 # ── Sessions (Chat mit Compliance-Kontext) ─────────────────────────────────────
 
 @app.get("/sessions")
-def list_sessions():
-    return session_manager.list_sessions()
+def list_sessions(limit: int = 50):
+    return session_manager.list_sessions(limit=min(limit, 1000))
 
 
 @app.post("/sessions")
