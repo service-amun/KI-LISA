@@ -1569,8 +1569,8 @@ function nachrichtAnzeigen(rolle, inhalt, warnungen = [], pruefung = false, plat
           <strong>Die KI-Antwort darf nicht automatisch verwendet werden.</strong><br>
           Bitte lassen Sie das Ergebnis von einer zuständigen Fachkraft prüfen und bestätigen Sie dann.
         </div>
-        <button class="pruefung-btn rot" onclick="eingabeFreigeben(); this.closest('.pruefung-banner').style.opacity='.5'">
-          Ich habe die Antwort geprüft — weiter
+        <button class="pruefung-btn rot" onclick="ueberwachungBestaetigen(this)">
+          Ich habe die Antwort eigenverantwortlich geprüft — weiter
         </button>
       </div>`;
   }
@@ -2041,6 +2041,17 @@ function platzhalterEinsetzen(btn) {
 function alleEinsetzen(btn) {
   const msg = btn.closest('.msg');
   if (msg) msg.querySelectorAll('.platzhalter-chip').forEach(chip => platzhalterEinsetzen(chip));
+  eingabeFreigeben();
+  btn.closest('.pruefung-banner').style.opacity = '.5';
+}
+
+async function ueberwachungBestaetigen(btn) {
+  // EU AI Act Art. 14 — Bestätigung im Audit-Log dokumentieren
+  if (aktuelleSession) {
+    try {
+      await fetch(`${API}/sessions/${aktuelleSession}/oversight-confirmed`, { method: 'POST' });
+    } catch { /* best effort — UI darf nicht blockieren */ }
+  }
   eingabeFreigeben();
   btn.closest('.pruefung-banner').style.opacity = '.5';
 }

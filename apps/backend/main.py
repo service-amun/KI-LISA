@@ -41,6 +41,27 @@ import gateway as tool_gateway
 # Compliance-Scheduler beim Start aktivieren (daemon thread)
 compliance_starten()
 
+# DSGVO Art. 5(1)(e) — Datenspeicherbegrenzung: alte Sessions beim Start bereinigen
+def _dsgvo_retention_loop():
+    import threading as _t
+    import time as _time
+    def _bereinigen():
+        try:
+            n = session_manager.cleanup_alte_sessions()
+            if n:
+                print(f"[AILIZA] DSGVO Retention: {n} Session(s) gelöscht (Art. 5).", flush=True)
+        except Exception as e:
+            print(f"[AILIZA] DSGVO Retention Fehler: {e}", flush=True)
+    _bereinigen()  # Einmal beim Start
+    def _wochentlich():
+        while True:
+            _time.sleep(7 * 24 * 60 * 60)
+            _bereinigen()
+    _t.Thread(target=_wochentlich, daemon=True, name="dsgvo-retention").start()
+
+import threading as _thread_mod
+_thread_mod.Thread(target=_dsgvo_retention_loop, daemon=True, name="dsgvo-retention-init").start()
+
 # ── PII-Zwischenspeicher (nur Arbeitsspeicher, nie auf Disk) ─────────────────
 # session_id → {token: originalwert}
 # Wird gelöscht wenn Session gelöscht wird oder Server neu startet.
@@ -198,12 +219,21 @@ def chat_in_session(session_id: str, body: ChatRequest, request: Request):
     if guard.token_map:
         _pii_zwischenspeicher[session_id] = guard.token_map
 
-    # Tokenisierter Text geht an LLM — Originaltext wird lokal gespeichert
-    llm_text  = guard.sanitized_text or body.message   # Token-Version für LLM
-    user_text = body.message                            # Original für Anzeige/Speicherung
+    # Tokenisierter Text geht an LLM — Original bleibt im RAM (nie in SQLite)
+    llm_text  = guard.sanitized_text or body.message   # Token-Version für LLM + Speicherung
+    user_text = body.message                            # Original nur für Anzeige im Frontend
 
-    # ── Schritt 3: Originalnachricht (mit PII) lokal speichern ───────────
-    session_manager.add_message(session_id, "user", user_text, warnings=guard.warnings)
+    # ── Schritt 3: Tokenisierte Nachricht speichern (DSGVO Art. 25 — kein PII auf Disk) ──
+    session_manager.add_message(session_id, "user", llm_text, warnings=guard.warnings)
+
+    # ── Human Oversight VOR LLM-Aufruf anlegen (EU AI Act Art. 14) ───────
+    session_vor_llm = session_manager.get_session(session_id)
+    if session_vor_llm and session_vor_llm.requires_human_oversight:
+        database.create_approval(
+            run_id=0,
+            task=llm_text[:200],   # Tokenisiert — kein PII
+            reason="Hochrisiko-Anfrage erkannt (EU AI Act Art. 6, Art. 14)",
+        )
 
     # ── Schritt 4: Routing + Reflection + LLM-Aufruf ─────────────────────
     route = route_query(llm_text)          # Modell, Token-Budget, Temperatur
@@ -248,15 +278,7 @@ def chat_in_session(session_id: str, body: ChatRequest, request: Request):
 
     # ── Schritt 6: Wiederhergestellte Antwort speichern ──────────────────
     session_manager.add_message(session_id, "assistant", antwort_text)
-
-    # Approval anlegen wenn Human Oversight nötig
     session = session_manager.get_session(session_id)
-    if session and session.requires_human_oversight:
-        database.create_approval(
-            run_id=0,
-            task=user_text[:200],
-            reason="Hochrisiko-Anfrage erkannt (EU AI Act Art. 6, Art. 14)",
-        )
 
     # ── Schritt 7: Audit-Log — KEINE Klardaten, nur Metadaten ───────────
     write_audit_entry("session.chat", {
@@ -294,6 +316,19 @@ def delete_session(session_id: str):
     _pii_zwischenspeicher.pop(session_id, None)
     write_audit_entry("session.deleted", {"session_id": session_id[:8] + "..."})
     return {"status": "gelöscht", "hinweis": "Alle Daten dieser Session wurden entfernt (DSGVO Art. 17)."}
+
+
+@app.post("/sessions/{session_id}/oversight-confirmed")
+def oversight_confirmed(session_id: str, request: Request):
+    """EU AI Act Art. 14 — Menschliche Aufsicht: Nutzer bestätigt eigenverantwortliche Prüfung."""
+    if not session_manager.get_session(session_id):
+        raise HTTPException(status_code=404, detail="Chat nicht gefunden.")
+    write_audit_entry("oversight.confirmed", {
+        "session_id": session_id[:8] + "...",
+        "ip": request.client.host if request.client else None,
+        "hinweis": "Nutzer hat Hochrisiko-Antwort eigenverantwortlich geprüft (EU AI Act Art. 14)",
+    })
+    return {"status": "bestätigt", "compliance": "EU AI Act Art. 14 — Menschliche Aufsicht dokumentiert"}
 
 
 def _tokenisiere_kontext(text: str, token_map: dict) -> str:
@@ -469,9 +504,8 @@ def _check_admin_token(request: Request):
 
 
 @app.get("/compliance/status")
-def compliance_status(request: Request):
-    """Letzter Compliance-Bericht ohne neuen Netzwerkaufruf."""
-    _check_admin_token(request)
+def compliance_status():
+    """Letzter Compliance-Bericht ohne neuen Netzwerkaufruf. Öffentlich lesbar — keine sensiblen Daten."""
     return compliance_bericht()
 
 
@@ -481,15 +515,15 @@ def compliance_check(request: Request):
     Vollständiger Check: EUR-Lex HEAD → ggf. Volltext + LLM-Zusammenfassung
     → RAG-Gedächtnis-Update → Bericht.
     Kann einige Sekunden dauern wenn Gesetze sich geändert haben.
+    Admin-geschützt: schreibt ins RAG-Gedächtnis.
     """
     _check_admin_token(request)
     return komplett_check()
 
 
 @app.get("/compliance/updates")
-def compliance_updates(request: Request):
-    """Zeigt gespeicherte Gesetzesänderungen aus dem RAG-Gedächtnis."""
-    _check_admin_token(request)
+def compliance_updates():
+    """Zeigt gespeicherte Gesetzesänderungen aus dem RAG-Gedächtnis. Öffentlich lesbar."""
     from skills.reflection_skill import erinnern
     erinnerungen = erinnern("gesetzesänderung aktualisierung dsgvo eu ai act pflicht", limit=10)
     return [

@@ -6,10 +6,11 @@ Sessions beeinflussen sich gegenseitig nicht.
 """
 
 import json
+import os
 import secrets
 import sqlite3
 from dataclasses import dataclass, field, asdict
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Optional
 
@@ -190,3 +191,14 @@ def delete_session(session_id: str) -> bool:
     with _get_conn() as conn:
         conn.execute("DELETE FROM sessions WHERE session_id = ?", (session_id,))
     return True
+
+
+def cleanup_alte_sessions() -> int:
+    """DSGVO Art. 5(1)(e) — Datenspeicherbegrenzung: Sessions älter als Aufbewahrungsfrist löschen."""
+    tage = int(os.getenv("AILIZA_DATA_RETENTION_DAYS", "90"))
+    grenze = (datetime.now(timezone.utc) - timedelta(days=tage)).isoformat()
+    with _get_conn() as conn:
+        result = conn.execute(
+            "DELETE FROM sessions WHERE updated_at < ?", (grenze,)
+        )
+    return result.rowcount
