@@ -20,5 +20,7 @@
   "apps/backend/skills/guardrail_skill.py": "ba244bf8590c00a68f16b76c424eda86316500a37d2a4999e0ff208e1e772a83",
   "apps/backend/skills/reflection_skill.py": "e7f1095fbf62c64310f5c047eb427cf44f55c364bc108daf8f4615c2f8917d1b",
   "apps/backend/compliance/weekly_checker.py": "c7138f08da3b6ce5600c87585633ea385e416125bdc1c7def6a660ab1c34b19a",
-  "requirements.txt": "4ea5b6f3d87e4b8c7eca87dc0780df3c38938ee1bf7c73622693d556da7e9e14"
+  "requirements.txt": "4ea5b6f3d87e4b8c7eca87dc0780df3c38938ee1bf7c73622693d556da7e9e14",
+  "apps/backend/compliance/dpia_updater.py": "4388bbb7070fc96f4c0308fb8dd066ef62a63b91376effafc7cdac88495f1317",
+  "dpia_update_einrichten.bat": "ecb16bae41b81042cd4719e69688a4f15abf57d34555d30bc71ba84e0c96b5d2"
 }
