@@ -1,12 +1,12 @@
 # Datenschutz-Folgenabschätzung (DPIA)
 ## nach Art. 35 DSGVO — AILIZA KI-Assistent
 
-**Dokument-Status:** Vorlage v1.1 — auszufüllen vor Go-Live  
+**Dokument-Status:** Vorlage v1.2 — auszufüllen vor Go-Live  
 **Erstellt:** 2026-06-18  
-**Zuletzt überarbeitet:** 2026-06-18 (juristische Überarbeitung: Art. 9, Art. 22, TIA, R6)  
+**Zuletzt überarbeitet:** 2026-06-18 (v1.2: DPF-Prüfung, Art. 9 Schutzlücke, TDDDG, Backup-Löschkonzept)  
 **Verantwortlicher:** [FIRMENNAME EINTRAGEN]  
 **Datenschutzbeauftragter (falls bestellt):** [DSB-NAME EINTRAGEN]  
-**Versionierung:** v1.1 — vor Inbetriebnahme abzuschließen  
+**Versionierung:** v1.2 — vor Inbetriebnahme abzuschließen  
 
 ---
 
@@ -48,7 +48,9 @@ AILIZA trifft keine automatisierten Entscheidungen mit Rechtswirkung (Art. 22 DS
 | Gewöhnliche personenbezogene Daten | Namen, E-Mail-Adressen in Nachrichten | Art. 6 Abs. 1 lit. b/f DSGVO |
 | Berufliche Kommunikation | E-Mail-Entwürfe, Dokumentinhalte | Art. 6 Abs. 1 lit. b DSGVO |
 
-Besondere Kategorien personenbezogener Daten (Art. 9 DSGVO) sind nicht Gegenstand der vorgesehenen Verarbeitung. Nutzer werden angewiesen, keine besonderen Kategorien personenbezogener Daten einzugeben. Erfolgt dennoch eine Eingabe durch den Nutzer, erfolgt die Verarbeitung ausschließlich im Rahmen der jeweiligen Nutzeranfrage und unter Anwendung der vorhandenen technischen Schutzmaßnahmen (PII-Tokenisierung, Warnhinweise). Eine wirksame Einwilligung nach Art. 9 Abs. 2 lit. a DSGVO wird durch die bloße Eingabe nicht begründet.
+Besondere Kategorien personenbezogener Daten (Art. 9 DSGVO) sind nicht Gegenstand der vorgesehenen Verarbeitung. Das System ist nicht auf die Erfassung solcher Daten ausgelegt und verarbeitet sie nicht systematisch. Nutzer werden durch Nutzungsrichtlinie und technische Hinweise angewiesen, keine besonderen Kategorien einzugeben.
+
+Erfolgt dennoch eine versehentliche Eingabe, greift folgendes technisches Schutzkonzept: Das System erkennt PII-Muster, warnt den Nutzer unverzüglich und tokenisiert den Inhalt vor jeder weiteren Übermittlung im RAM. Der Klartext wird nicht dauerhaft gespeichert. Die Verarbeitung beschränkt sich auf das zur Bearbeitung der Nutzeranfrage unbedingt Erforderliche und endet mit der Sitzung. Eine wirksame Einwilligung nach Art. 9 Abs. 2 lit. a DSGVO wird durch die bloße Eingabe nicht begründet.
 
 Keine systematische Verarbeitung besonderer Kategorien. AILIZA ist nicht für Personalentscheidungen, Kreditentscheidungen oder medizinische Diagnosen vorgesehen.
 
@@ -63,12 +65,15 @@ Keine systematische Verarbeitung besonderer Kategorien. AILIZA ist nicht für Pe
 
 | Empfänger | Land | Zweck | Rechtsgrundlage |
 |-----------|------|-------|-----------------|
-| Groq Inc. | USA | LLM-Inferenz (KI-Verarbeitung) | Art. 46 DSGVO — Standardvertragsklauseln (SCC) + Auftragsverarbeitungsvertrag (AVV) + Transfer Impact Assessment (TIA) |
-| Tavily Inc. (optional) | USA | Echtzeit-Websuche | Art. 46 DSGVO — SCC + AVV + TIA (nur wenn TAVILY_API_KEY gesetzt) |
+| Groq Inc. | USA | LLM-Inferenz (KI-Verarbeitung) | Vorrangig Art. 45 DSGVO (EU-US Data Privacy Framework), sofern Groq DPF-zertifiziert — sonst Art. 46 DSGVO (SCC + AVV + TIA) |
+| Tavily Inc. (optional) | USA | Echtzeit-Websuche | Vorrangig Art. 45 DSGVO (EU-US DPF), sofern Tavily zertifiziert — sonst Art. 46 DSGVO (SCC + AVV + TIA) |
 
-**AVV mit Groq:** Muss vor Go-Live unterzeichnet sein (console.groq.com → Legal).  
-**AVV mit Tavily:** Muss vor Aktivierung der Websuche unterzeichnet sein.  
-**Transfer Impact Assessment (TIA):** Nach Schrems II (EuGH C-311/18) sind SCC allein nicht ausreichend. Für jeden US-Empfänger ist ein TIA zu dokumentieren, der die tatsächlichen Zugriffsmöglichkeiten US-amerikanischer Behörden (insb. nach FISA 702, EO 12333) bewertet und ggf. ergänzende technische Maßnahmen festlegt (z.B. Verschlüsselung vor Übermittlung).
+**Vor Go-Live zu prüfen:**
+- DPF-Zertifizierung Groq: dataprivacyframework.gov → Suche nach "Groq". Falls zertifiziert: Rechtsgrundlage Art. 45 DSGVO, kein TIA zwingend erforderlich (SCC als Fallback empfohlen).
+- DPF-Zertifizierung Tavily: dataprivacyframework.gov → Suche nach "Tavily".
+- Falls nicht zertifiziert: TIA nach Schrems II (EuGH C-311/18) Pflicht — bewertet FISA 702 / EO 12333 Zugriffsrisiken und legt ggf. ergänzende TOMs fest.
+- AVV mit Groq unterzeichnen: console.groq.com → Legal.
+- AVV mit Tavily vor Aktivierung der Websuche unterzeichnen.
 
 ### 2.6§ Speicherfristen
 
@@ -114,7 +119,7 @@ Daten werden ausschließlich für die vom Nutzer initiierte Anfrage verarbeitet.
 - Input-Validierung gegen Injection-Angriffe
 - SQLite-Datenbank lokal, kein externer Datenbankzugriff
 - Regelmäßiges Löschen alter Sessions (automatisierter Retention-Daemon)
-- Backups der SQLite-Datenbank: verschlüsselt aufbewahren und Zugriff auf berechtigte Personen beschränken
+- Backups der SQLite-Datenbank: verschlüsselt aufbewahren, Zugriff auf berechtigte Personen beschränken; Backups werden nach spätestens 90 Tagen automatisiert überschrieben oder gelöscht — die Backup-Aufbewahrungsfrist darf die konfigurierte Datenspeicherfrist (`AILIZA_DATA_RETENTION_DAYS`) nicht überschreiten (Art. 5 Abs. 1 lit. e DSGVO)
 
 ---
 
@@ -188,4 +193,4 @@ Zuständige Behörde: [BUNDESLAND-DATENSCHUTZBEHÖRDE EINTRAGEN]
 
 *Diese DPIA-Vorlage wurde auf Basis der AILIZA-Systemarchitektur (Stand 18.06.2026) erstellt und juristisch überarbeitet (v1.1). Sie ersetzt keine individuelle Rechtsberatung. Bei Unsicherheiten einen auf Datenschutzrecht spezialisierten Rechtsanwalt oder den betrieblichen Datenschutzbeauftragten hinzuziehen.*
 
-*Regulatorischer Kontext: DSGVO (EU) 2016/679 · EU AI Act (EU) 2024/1689 · BDSG 2018 · DDG 2024 · TTDSG 2021 · EuGH C-311/18 (Schrems II)*
+*Regulatorischer Kontext: DSGVO (EU) 2016/679 · EU AI Act (EU) 2024/1689 · BDSG 2018 · DDG · TDDDG · EuGH C-311/18 (Schrems II) · EU-US Data Privacy Framework (Beschluss 2023/1795)*
