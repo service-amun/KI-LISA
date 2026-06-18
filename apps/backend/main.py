@@ -57,12 +57,14 @@ app = FastAPI(
     redoc_url=None,
 )
 
+# Lokaler Betrieb: nur localhost erlaubt. Railway: AILIZA_ALLOWED_ORIGIN setzen.
+_ALLOWED_ORIGIN = os.getenv("AILIZA_ALLOWED_ORIGIN", "http://127.0.0.1:8001")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=[_ALLOWED_ORIGIN],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "DELETE"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 app.include_router(approvals_router)
@@ -388,7 +390,11 @@ def tools_liste():
 # ── Audit-Log ─────────────────────────────────────────────────────────────────
 
 @app.get("/audit-logs")
-def audit_logs(limit: int = 50):
+def audit_logs(request: Request, limit: int = 50):
+    token = request.headers.get("X-Admin-Token", "")
+    admin_token = os.getenv("AILIZA_ADMIN_TOKEN", "")
+    if not admin_token or token != admin_token:
+        raise HTTPException(status_code=403, detail="Zugriff verweigert.")
     return get_audit_entries(limit=min(limit, 200))
 
 

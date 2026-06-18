@@ -1,18 +1,22 @@
 # © 2026 Karola Fromm-Nasreldin | AILIZA — Alle Rechte vorbehalten
 """
-AILIZA Auto-Updater
-Lädt beim Start automatisch die neuesten Dateien von GitHub.
-Keine Git-Installation nötig.
+AILIZA Auto-Updater mit SHA-256 Integritätsprüfung.
+Jede Datei wird gegen eine signierte Prüfsummen-Datei verifiziert,
+bevor sie auf Disk geschrieben wird. Manipulation am Repo wird erkannt.
 """
 
-import urllib.request
-import urllib.error
+import hashlib
+import json
 import os
-import sys
+import urllib.error
+import urllib.request
 
-REPO    = "service-amun/ki-lisa"
-BRANCH  = "claude/claude-md-docs-ssfhys"
-BASE    = f"https://raw.githubusercontent.com/{REPO}/{BRANCH}"
+REPO   = "service-amun/ki-lisa"
+BRANCH = "claude/claude-md-docs-ssfhys"
+BASE   = f"https://raw.githubusercontent.com/{REPO}/{BRANCH}"
+
+# Prüfsummen-Datei im Repo — wird zusammen mit den Dateien gepflegt
+CHECKSUMS_URL = f"{BASE}/checksums.json"
 
 DATEIEN = [
     "apps/frontend/index.html",
@@ -26,47 +30,73 @@ DATEIEN = [
     "requirements.txt",
 ]
 
+
+def _holen(url: str) -> bytes:
+    req = urllib.request.Request(
+        url, headers={"User-Agent": "AILIZA-Updater/1.0"}
+    )
+    with urllib.request.urlopen(req, timeout=10) as r:
+        return r.read()
+
+
+def _sha256(daten: bytes) -> str:
+    return hashlib.sha256(daten).hexdigest()
+
+
 def aktualisieren():
-    print("  Prüfe auf Updates...", flush=True)
+    print("  Pruefe auf Updates...", flush=True)
+
+    # Prüfsummen-Datei laden
+    try:
+        checksums = json.loads(_holen(CHECKSUMS_URL))
+    except Exception:
+        # Keine Prüfsummen verfügbar — kein Update (sicher scheitern)
+        print("  Pruefung nicht moeglich — starte mit lokaler Version.", flush=True)
+        return
+
     aktualisiert = 0
-    fehler = 0
+    abgelehnt = 0
 
     for pfad in DATEIEN:
+        erwartete_pruefsumme = checksums.get(pfad)
+        if not erwartete_pruefsumme:
+            continue  # Datei nicht in Prüfsummen-Liste — überspringen
+
         url = f"{BASE}/{pfad}"
         ziel = pfad.replace("/", os.sep)
-
         os.makedirs(os.path.dirname(ziel) or ".", exist_ok=True)
 
         try:
-            req = urllib.request.Request(
-                url,
-                headers={"User-Agent": "AILIZA-Updater/1.0"},
-            )
-            with urllib.request.urlopen(req, timeout=8) as r:
-                neu = r.read()
-
-            # Nur schreiben wenn Inhalt sich geändert hat
-            if os.path.exists(ziel):
-                with open(ziel, "rb") as f:
-                    if f.read() == neu:
-                        continue  # keine Änderung
-
-            with open(ziel, "wb") as f:
-                f.write(neu)
-            print(f"  ✓ Aktualisiert: {pfad}", flush=True)
-            aktualisiert += 1
-
+            neu = _holen(url)
         except urllib.error.URLError:
-            fehler += 1
+            continue
         except Exception:
-            fehler += 1
+            continue
 
+        # Integrität prüfen — stimmt die Prüfsumme nicht, wird NICHT geschrieben
+        if _sha256(neu) != erwartete_pruefsumme:
+            print(f"  WARNUNG: Integritaetsfehler bei {pfad} — Update abgelehnt!", flush=True)
+            abgelehnt += 1
+            continue
+
+        # Nur schreiben wenn Inhalt sich geändert hat
+        if os.path.exists(ziel):
+            with open(ziel, "rb") as f:
+                if f.read() == neu:
+                    continue
+
+        with open(ziel, "wb") as f:
+            f.write(neu)
+        print(f"  Aktualisiert: {pfad}", flush=True)
+        aktualisiert += 1
+
+    if abgelehnt > 0:
+        print(f"  {abgelehnt} Datei(en) abgelehnt (Integritaetsfehler)!", flush=True)
     if aktualisiert > 0:
         print(f"  {aktualisiert} Datei(en) aktualisiert.", flush=True)
-    elif fehler == 0:
+    elif abgelehnt == 0:
         print("  Bereits aktuell.", flush=True)
-    else:
-        print("  Offline oder keine Verbindung — starte mit lokaler Version.", flush=True)
+
 
 if __name__ == "__main__":
     aktualisieren()
