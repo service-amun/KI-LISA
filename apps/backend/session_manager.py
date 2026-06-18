@@ -17,7 +17,8 @@ from typing import Optional
 from compliance_context import ComplianceContextManager, ComplianceContext
 
 
-DB_PATH = Path("data/chat_sessions.db")
+_BASE_DIR = Path(__file__).resolve().parent.parent.parent
+DB_PATH = Path(os.getenv("AILIZA_SESSION_DB_PATH", str(_BASE_DIR / "data" / "chat_sessions.db")))
 _mgr = ComplianceContextManager()
 
 

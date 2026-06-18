@@ -21,6 +21,22 @@ from pydantic import BaseModel, Field
 # .env laden (lokal: apps/backend/.env, Railway: ENV-Vars)
 load_dotenv(Path(__file__).parent / ".env")
 
+# Startup: Admin-Token aus ENV oder temporär generieren
+import secrets as _secrets
+_admin_token_env = os.getenv("AILIZA_ADMIN_TOKEN", "")
+if not _admin_token_env:
+    _admin_token_env = _secrets.token_hex(16)
+    print(f"[AILIZA] WARNUNG: AILIZA_ADMIN_TOKEN nicht gesetzt.", flush=True)
+    print(f"[AILIZA] Temporäres Admin-Token: {_admin_token_env}", flush=True)
+    print("[AILIZA] Bitte AILIZA_ADMIN_TOKEN in apps/backend/.env dauerhaft setzen.", flush=True)
+
+# Hinweis wenn Firma noch nicht konfiguriert
+_company = os.getenv("AILIZA_COMPANY_NAME", "Ihr Unternehmen")
+_dsb_email = os.getenv("AILIZA_DSB_EMAIL", "datenschutz@ihr-unternehmen.de")
+if _company == "Ihr Unternehmen" or _dsb_email == "datenschutz@ihr-unternehmen.de":
+    print("[AILIZA] HINWEIS: AILIZA_COMPANY_NAME und/oder AILIZA_DSB_EMAIL sind noch Platzhalter.", flush=True)
+    print("[AILIZA] Bitte in apps/backend/.env mit echten Firmendaten befüllen (DSGVO Art. 13 / DDG §5).", flush=True)
+
 # Eigene Module (sys.path damit relative Imports funktionieren)
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -41,26 +57,28 @@ import gateway as tool_gateway
 # Compliance-Scheduler beim Start aktivieren (daemon thread)
 compliance_starten()
 
-# DSGVO Art. 5(1)(e) — Datenspeicherbegrenzung: alte Sessions beim Start bereinigen
 def _dsgvo_retention_loop():
-    import threading as _t
+    """DSGVO Art. 5(1)(e) — täglich alte Sessions löschen."""
     import time as _time
-    def _bereinigen():
+    # Einmal beim Start
+    try:
+        n = session_manager.cleanup_alte_sessions()
+        if n:
+            print(f"[AILIZA] DSGVO Retention: {n} Session(s) gelöscht.", flush=True)
+    except Exception as e:
+        print(f"[AILIZA] Retention-Fehler beim Start: {e}", flush=True)
+    # Dann täglich
+    while True:
+        _time.sleep(86400)
         try:
             n = session_manager.cleanup_alte_sessions()
             if n:
-                print(f"[AILIZA] DSGVO Retention: {n} Session(s) gelöscht (Art. 5).", flush=True)
+                print(f"[AILIZA] DSGVO Retention: {n} Session(s) gelöscht.", flush=True)
         except Exception as e:
-            print(f"[AILIZA] DSGVO Retention Fehler: {e}", flush=True)
-    _bereinigen()  # Einmal beim Start
-    def _wochentlich():
-        while True:
-            _time.sleep(7 * 24 * 60 * 60)
-            _bereinigen()
-    _t.Thread(target=_wochentlich, daemon=True, name="dsgvo-retention").start()
+            print(f"[AILIZA] Retention-Fehler: {e}", flush=True)
 
 import threading as _thread_mod
-_thread_mod.Thread(target=_dsgvo_retention_loop, daemon=True, name="dsgvo-retention-init").start()
+_thread_mod.Thread(target=_dsgvo_retention_loop, daemon=True, name="dsgvo-retention").start()
 
 # ── PII-Zwischenspeicher (nur Arbeitsspeicher, nie auf Disk) ─────────────────
 # session_id → {token: originalwert}
@@ -328,7 +346,7 @@ def chat_in_session(session_id: str, body: ChatRequest, request: Request):
 
     return {
         "text": antwort_text,                   # Restaurierter Text — PII-Tokens durch Originalwerte ersetzt
-        "platzhalter": aktuelles_mapping,       # Token → Originalwert (für Klick-Einsetzung im Frontend)
+        "platzhalter": {k: k for k in aktuelles_mapping},  # nur Token-Keys, keine Originalwerte
         "model": response.model,
         "tokens_used": response.tokens_used,
         "warnings": guard.warnings,
@@ -472,10 +490,7 @@ def tools_liste():
 
 @app.get("/audit-logs")
 def audit_logs(request: Request, limit: int = 50):
-    token = request.headers.get("X-Admin-Token", "")
-    admin_token = os.getenv("AILIZA_ADMIN_TOKEN", "")
-    if not admin_token or not hmac.compare_digest(token.encode(), admin_token.encode()):
-        raise HTTPException(status_code=403, detail="Zugriff verweigert.")
+    _check_admin_token(request)
     return get_audit_entries(limit=min(limit, 200))
 
 
@@ -493,8 +508,9 @@ def ai_status():
 
 
 @app.get("/ai/test")
-def ai_test():
+def ai_test(request: Request):
     """Testet Groq-Verbindung mit echtem API-Aufruf. Zeigt genauen Fehlercode."""
+    _check_admin_token(request)
     import urllib.request, urllib.error, json as _json, os as _os
     key = _os.getenv("GROQ_API_KEY", "")
     if not key:
@@ -533,8 +549,7 @@ def ai_test():
 def _check_admin_token(request: Request):
     """Shared helper — raises 403 if X-Admin-Token is missing or wrong."""
     token = request.headers.get("X-Admin-Token", "")
-    admin_token = os.getenv("AILIZA_ADMIN_TOKEN", "")
-    if not admin_token or not hmac.compare_digest(token.encode(), admin_token.encode()):
+    if not hmac.compare_digest(token.encode(), _admin_token_env.encode()):
         raise HTTPException(status_code=403, detail="Zugriff verweigert.")
 
 

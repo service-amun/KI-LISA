@@ -1820,6 +1820,7 @@ function einstellungenSchliessen() {
 }
 function einstellungenSpeichern() {
   eigeneAnweisungen = document.getElementById('eigene-anweisungen-feld').value.trim();
+  if (!localStorage.getItem('ailiza_dsgvo_ok')) return;
   localStorage.setItem('ailiza_anweisungen', eigeneAnweisungen);
   einstellungenSchliessen();
   einstellungenIndikatorAktualisieren();
@@ -1983,6 +1984,7 @@ function skillBearbeiten(idx) { skillModalOeffnen(idx); }
 function skillLoeschen(idx) {
   if (!confirm(`Karte „${eigeneSkills[idx].name}" löschen?`)) return;
   eigeneSkills.splice(idx, 1);
+  if (!localStorage.getItem('ailiza_dsgvo_ok')) return;
   localStorage.setItem('ailiza_eigene_skills', JSON.stringify(eigeneSkills));
   skillsAnzeigen();
 }
@@ -2005,6 +2007,7 @@ function skillSpeichern() {
   } else {
     eigeneSkills.push(skill);
   }
+  if (!localStorage.getItem('ailiza_dsgvo_ok')) return;
   localStorage.setItem('ailiza_eigene_skills', JSON.stringify(eigeneSkills));
   skillModalSchliessen();
   skillsAnzeigen();
@@ -2060,6 +2063,7 @@ function projektSpeichern() {
     prio: document.getElementById('pj-prio').value,
     erstellt: new Date().toISOString(),
   });
+  if (!localStorage.getItem('ailiza_dsgvo_ok')) return;
   localStorage.setItem('ailiza_projekte', JSON.stringify(projekte));
   projektSchliessen();
   projekteAnzeigen();
@@ -2069,6 +2073,7 @@ function projektSpeichern() {
 function projektLoeschen(i) {
   if (!confirm(`Projekt „${projekte[i].name}" wirklich löschen?`)) return;
   projekte.splice(i, 1);
+  if (!localStorage.getItem('ailiza_dsgvo_ok')) return;
   localStorage.setItem('ailiza_projekte', JSON.stringify(projekte));
   projekteAnzeigen();
 }

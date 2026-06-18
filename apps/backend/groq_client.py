@@ -162,8 +162,7 @@ def chat(
         text = data["choices"][0]["message"]["content"]
         tokens = data.get("usage", {}).get("total_tokens", 0)
 
-        if "ailiza" not in text.lower() and "ki-system" not in text.lower():
-            text += AI_DISCLAIMER
+        text += AI_DISCLAIMER
 
         return LLMResponse(text=text, model=chosen_model, tokens_used=tokens)
 

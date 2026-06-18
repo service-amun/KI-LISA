@@ -21,15 +21,17 @@ from typing import Optional
 # ── Lesbare Platzhalter-Namen (statt DATEN_1) ────────────────────────────────
 
 PII_PATTERNS = {
-    "E-Mail-Adresse": r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b",
-    "Telefonnummer":  r"\b(?:\+49|0049|0)[1-9][\d/\-]{4,14}\b",
-    "Kontoverbindung":r"\bDE\d{2}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{2}\b",
-    "Geburtsdatum":   r"\b\d{1,2}[./]\d{1,2}[./]\d{2,4}\b",
+    "E-Mail-Adresse":    r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b",
+    "Telefonnummer":     r"\b(?:\+49|0049|0)[1-9][\d/\-]{4,14}\b",
+    "Kontoverbindung":   r"\bDE\d{2}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{2}\b",
+    "Geburtsdatum":      r"\b\d{1,2}[./]\d{1,2}[./]\d{2,4}\b",
+    "IP-Adresse":        r"\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b",
+    "Sozialversicherung":r"\b\d{2}\s?\d{6}\s?[A-Z]\s?\d{3}\b",
 }
 
 PROHIBITED_PATTERNS = [
     r"sublimin\w+",
-    r"soziale[sr]?\s+scoring",
+    r"social[\s\-]?scoring|sozialkreditsystem|sozialpunkte|bürgerbewertung|verhaltensscoring",
     r"biometrische\s+(echtzeit|massen)überwachung",
     r"manipulation\s+(durch\s+)?täuschung",
 ]
