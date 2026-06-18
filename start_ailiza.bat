@@ -4,17 +4,23 @@ title AILIZA - KI-Assistent
 
 cd /d "%~dp0"
 
+:: Gebündeltes Python bevorzugen, sonst System-Python
+if exist "%~dp0_python\python.exe" (
+    set PYTHON=%~dp0_python\python.exe
+) else (
+    set PYTHON=python
+)
+
 echo.
 echo  *** AILIZA - EU-konformer KI-Assistent ***
 echo  Bitte dieses Fenster NICHT schliessen!
 echo.
 
 :: Python pruefen
-where python >nul 2>&1
+"%PYTHON%" --version >nul 2>&1
 if errorlevel 1 (
     echo  FEHLER: Python nicht gefunden.
-    echo  Bitte Python 3.11 installieren: https://www.python.org/downloads/
-    echo  WICHTIG: "Add Python to PATH" ankreuzen!
+    echo  Bitte AILIZA.bat starten — richtet Python automatisch ein.
     pause
     exit /b 1
 )
@@ -31,7 +37,7 @@ if not exist "apps\backend\.env" (
 
 :: Pakete installieren
 echo  Pruefe Pakete...
-python -m pip install -r requirements.txt -q --disable-pip-version-check
+"%PYTHON%" -m pip install -r requirements.txt -q --disable-pip-version-check
 if errorlevel 1 (
     echo  FEHLER: Pakete konnten nicht installiert werden.
     pause
@@ -42,7 +48,7 @@ echo.
 
 :: Auto-Update
 echo  Pruefe auf Updates...
-python updater.py
+"%PYTHON%" updater.py
 echo.
 
 :: PYTHONPATH setzen — stellt sicher dass Python 'apps' findet
@@ -77,14 +83,14 @@ if "%NETZWERK%"=="1" (
     echo  ^(Diese Adresse an Ihre Kollegen weitergeben^)
     echo.
     start "" cmd /c "timeout /t 3 /nobreak >nul && start http://127.0.0.1:8001/dashboard"
-    python -m uvicorn apps.backend.main:app --port 8001 --host 0.0.0.0
+    "%PYTHON%" -m uvicorn apps.backend.main:app --port 8001 --host 0.0.0.0
 ) else (
     echo  AILIZA laeuft auf: http://127.0.0.1:8001/dashboard
     echo  Browser oeffnet sich gleich...
     echo  Tipp: AILIZA_NETZWERK=1 in .env aktiviert den Buero-Modus fuer alle Kollegen.
     echo.
     start "" cmd /c "timeout /t 3 /nobreak >nul && start http://127.0.0.1:8001/dashboard"
-    python -m uvicorn apps.backend.main:app --port 8001 --host 127.0.0.1
+    "%PYTHON%" -m uvicorn apps.backend.main:app --port 8001 --host 127.0.0.1
 )
 
 echo.

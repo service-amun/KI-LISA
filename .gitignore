@@ -18,6 +18,10 @@ build/
 .venv/
 venv/
 
+# Gebündeltes Python (wird beim ersten Start automatisch heruntergeladen)
+_python/
+ailiza.ico
+
 # OS
 .DS_Store
 Thumbs.db
