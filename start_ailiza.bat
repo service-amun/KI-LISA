@@ -45,6 +45,10 @@ echo  Pruefe auf Updates...
 python updater.py
 echo.
 
+:: PYTHONPATH explizit auf das Projektverzeichnis setzen,
+:: damit Python das 'apps'-Paket immer findet
+set PYTHONPATH=%~dp0
+
 :: Server starten
 :: HINWEIS: Fuer Railway/Container-Deployments --host 0.0.0.0 und --port $PORT verwenden (siehe Procfile).
 echo  AILIZA laeuft auf: http://127.0.0.1:8001/dashboard

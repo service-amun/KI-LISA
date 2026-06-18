@@ -19,14 +19,27 @@ BASE   = f"https://raw.githubusercontent.com/{REPO}/{BRANCH}"
 CHECKSUMS_URL = f"{BASE}/checksums.json"
 
 DATEIEN = [
+    "apps/__init__.py",
+    "apps/backend/__init__.py",
+    "apps/backend/routers/__init__.py",
+    "apps/backend/skills/__init__.py",
+    "apps/backend/compliance/__init__.py",
+    "apps/backend/audit/__init__.py",
+    "apps/backend/tools/__init__.py",
     "apps/frontend/index.html",
     "apps/backend/main.py",
     "apps/backend/groq_client.py",
     "apps/backend/session_manager.py",
     "apps/backend/compliance_context.py",
+    "apps/backend/database.py",
+    "apps/backend/gateway.py",
+    "apps/backend/agent_runtime.py",
     "apps/backend/routers/datei_upload.py",
+    "apps/backend/routers/approvals.py",
     "apps/backend/skills/router_skill.py",
     "apps/backend/skills/guardrail_skill.py",
+    "apps/backend/skills/reflection_skill.py",
+    "apps/backend/compliance/weekly_checker.py",
     "requirements.txt",
 ]
 
