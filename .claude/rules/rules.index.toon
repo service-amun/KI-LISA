@@ -1,0 +1,10 @@
+# Rules index. TOON format: header row of field names separated by " | ", one rule per subsequent row.
+name | description
+command-execution | Claude always executes commands via its own tools, never asks the user to run CLI manually. Fallback for UAC/interactive cases: a launcher at project root — .bat on Windows, .sh on Unix.
+json-style | House conventions for JSON files in this harness. Format selection is in CLAUDE.md.
+md-style | House style for all LLM-authored markdown produced in this harness: frontmatter, sections, lists, code blocks, links, and prohibited elements.
+toon-style | House conventions for TOON output in this harness. Includes full syntax reference because Claude does not parse TOON natively. Format selection is in CLAUDE.md.
+visual-verify | Mandate for visual verification of UI output. Claude must use screenshot tools after producing or modifying any visual artifact; code-only review is never sufficient.
+yaml-style | House conventions for YAML files and frontmatter blocks in this harness. Format selection is in CLAUDE.md.
+security | Security rules for source code: credential handling, input validation, injection prevention, supply chain safety, and forbidden patterns. Load before writing auth, API, or data-handling code.
+error-handling | Error handling rules: no silent catches, fail-fast, retry transient failures with backoff, circuit breakers, structured observability context. Load when writing error handling or retry logic.

@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><!-- TITLE --></title>
+  <link rel="stylesheet" href="base-ui/tokens.css">
+  <link rel="stylesheet" href="base-ui/components.css">
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <style>
+    body { padding: var(--sp-10) 0 var(--sp-16); }
+    .chart-wrap { padding: 0; }
+  </style>
+</head>
+<body>
+<main class="container">
+
+  <!-- Header -->
+  <header class="band" style="margin-bottom: var(--sp-8);">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--sp-4);">
+      <div>
+        <h1 style="color: #fff; margin: 0 0 var(--sp-2);"><!-- REPORT TITLE --></h1>
+        <p style="color: rgba(255,255,255,0.78); margin: 0; font-size: var(--text-sm);"><!-- Subtitle / date / data source --></p>
+      </div>
+      <button class="btn" id="theme-toggle" aria-label="Toggle dark and light mode"
+        style="background: rgba(255,255,255,0.14); border: none; color: #fff; flex-shrink: 0;">
+        &#9680; Dark / Light
+      </button>
+    </div>
+  </header>
+
+  <!-- Example: 2-column chart grid -->
+  <div class="grid-2" style="margin-bottom: var(--sp-8);">
+    <div class="card chart-wrap" id="chart-a" style="height: 360px;"></div>
+    <div class="card chart-wrap" id="chart-b" style="height: 360px;"></div>
+  </div>
+
+  <!-- Example: full-width chart -->
+  <div class="card chart-wrap" id="chart-c" style="height: 320px; margin-bottom: var(--sp-8);"></div>
+
+  <!-- Example: stat row above chart -->
+  <div class="card grid-4" style="margin-bottom: var(--sp-6);">
+    <div class="stat">
+      <span class="stat-value" id="kpi-a">—</span>
+      <span class="stat-label"><!-- KPI label --></span>
+    </div>
+    <div class="stat">
+      <span class="stat-value" id="kpi-b">—</span>
+      <span class="stat-label"><!-- KPI label --></span>
+    </div>
+    <div class="stat">
+      <span class="stat-value" id="kpi-c">—</span>
+      <span class="stat-label"><!-- KPI label --></span>
+    </div>
+    <div class="stat">
+      <span class="stat-value" id="kpi-d">—</span>
+      <span class="stat-label"><!-- KPI label --></span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ─── Token resolver ─────────────────────────────────────────────────────── */
+function tok(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+/* ─── ECharts theme from base-ui tokens ─────────────────────────────────── */
+function buildTheme() {
+  var font = tok('--font-sans').replace(/["']/g, '');
+  var noOutline = { textBorderWidth: 0, textShadowBlur: 0 };
+  var axis = {
+    axisLine:  { lineStyle: { color: tok('--fg-3') } },
+    axisTick:  { lineStyle: { color: tok('--fg-3') } },
+    axisLabel: Object.assign({ color: tok('--fg-2') }, noOutline),
+    splitLine: { lineStyle: { color: tok('--border') } },
+    splitArea: { show: false }
+  };
+  return {
+    color: [
+      tok('--accent'), tok('--info'), tok('--success'),
+      tok('--warning'), tok('--error'),
+      '#8B5CF6', '#EC4899', '#F97316'
+    ],
+    backgroundColor: 'transparent',
+    textStyle:  Object.assign({ fontFamily: font, color: tok('--fg-2') }, noOutline),
+    title:      { textStyle: Object.assign({ color: tok('--fg'), fontFamily: font }, noOutline) },
+    legend:     { textStyle: Object.assign({ color: tok('--fg-2'), fontFamily: font }, noOutline) },
+    tooltip: {
+      backgroundColor: tok('--bg-1'),
+      borderWidth: 0,
+      textStyle: { color: tok('--fg'), fontFamily: font }
+    },
+    categoryAxis: axis,
+    valueAxis:    axis,
+    timeAxis:     axis,
+    logAxis:      axis
+  };
+}
+
+/* ─── Base option defaults ───────────────────────────────────────────────── */
+var POLAR_TYPES = { pie: 1, gauge: 1, radar: 1 };
+
+function baseOption(seriesType) {
+  var polar = POLAR_TYPES[seriesType];
+  return {
+    backgroundColor: 'transparent',
+    animation: true,
+    animationDuration: 300,
+    grid:    polar ? undefined : { left: 8, right: 8, top: 40, bottom: 8, containLabel: true },
+    tooltip: { trigger: polar ? 'item' : 'axis' }
+  };
+}
+
+/* ─── Chart factory ──────────────────────────────────────────────────────── */
+var charts = [];
+
+function makeChart(el, option) {
+  echarts.registerTheme('mage', buildTheme());
+  var type  = (option.series && option.series[0] && option.series[0].type) || '';
+  var merged = Object.assign(baseOption(type), option);
+  var inst  = echarts.init(el, 'mage', { renderer: 'canvas' });
+  inst.setOption(merged);
+  if (window.ResizeObserver) {
+    new ResizeObserver(function() { inst.resize(); }).observe(el);
+  }
+  return inst;
+}
+
+/* ─── Dark / light retheme ───────────────────────────────────────────────── */
+new MutationObserver(function() {
+  clearTimeout(window._rethemePending);
+  window._rethemePending = setTimeout(function() {
+    charts.forEach(function(c) {
+      c.inst.dispose();
+      c.inst = makeChart(c.el, c.option);
+    });
+  }, 60);
+}).observe(document.documentElement, {
+  attributes: true,
+  attributeFilter: ['data-theme']
+});
+
+/* ─── Theme toggle button ────────────────────────────────────────────────── */
+document.getElementById('theme-toggle').addEventListener('click', function() {
+  var h = document.documentElement;
+  h.dataset.theme = h.dataset.theme === 'light' ? 'dark' : 'light';
+});
+
+/* ─── Chart definitions ──────────────────────────────────────────────────── */
+
+/* Chart A — replace with actual series option from echarts SKILL §7 */
+var optionA = {
+  legend: { top: 8, left: 'center' },
+  xAxis: { type: 'category', data: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'] },
+  yAxis: { type: 'value' },
+  series: [
+    { type: 'bar', name: 'Series A', data: [320, 480, 330, 620, 510, 730] },
+    { type: 'bar', name: 'Series B', data: [200, 350, 410, 390, 620, 480] }
+  ]
+};
+
+/* Chart B — replace with actual series option */
+var optionB = {
+  legend: { orient: 'vertical', left: 'left', top: 'middle' },
+  series: [{
+    type: 'pie',
+    radius: ['40%', '70%'],
+    center: ['60%', '50%'],
+    data: [
+      { value: 48, name: 'Category A' },
+      { value: 32, name: 'Category B' },
+      { value: 20, name: 'Category C' }
+    ],
+    label: { formatter: '{b}: {d}%' }
+  }]
+};
+
+/* Chart C — replace with actual series option */
+var optionC = {
+  legend: { top: 8, left: 'center' },
+  xAxis: { type: 'category', boundaryGap: false, data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] },
+  yAxis: { type: 'value' },
+  series: [
+    { type: 'line', name: 'Line A', smooth: true, symbol: 'circle', symbolSize: 6,
+      data: [820, 932, 901, 934, 1290, 1330, 1480] }
+  ]
+};
+
+/* ─── Initialize ─────────────────────────────────────────────────────────── */
+[
+  { id: 'chart-a', option: optionA },
+  { id: 'chart-b', option: optionB },
+  { id: 'chart-c', option: optionC }
+].forEach(function(def) {
+  var el   = document.getElementById(def.id);
+  var inst = makeChart(el, def.option);
+  charts.push({ el: el, option: def.option, inst: inst });
+});
+
+/* ─── KPI values (set from data) ─────────────────────────────────────────── */
+// document.getElementById('kpi-a').textContent = '1,248';
+</script>
+</body>
+</html>

@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>mage-base UI — Demo</title>
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="components.css">
+  <style>
+    body { padding: var(--sp-12) 0 var(--sp-16); }
+
+    .section { margin-bottom: var(--sp-12); }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-4);
+      margin-bottom: var(--sp-6);
+      color: var(--fg-3);
+      font-size: var(--text-xs);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: var(--tracking-wide);
+    }
+    .section-header::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header band -->
+  <div class="band section">
+    <div style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: var(--sp-6);">
+      <div>
+        <div class="flex-c gap-2" style="margin-bottom: var(--sp-4);">
+          <span class="badge" style="color: rgba(255,255,255,0.7); border-color: rgba(255,255,255,0.2);">v0.3.0</span>
+          <span class="badge" style="color: rgba(255,255,255,0.7); border-color: rgba(255,255,255,0.2);">mage-base</span>
+        </div>
+        <h1 style="color: #fff; margin-bottom: var(--sp-3);">Base UI System</h1>
+        <p style="color: rgba(255,255,255,0.78); margin: 0; font-size: var(--text-sm);">
+          Glass depth throughout &middot; No colored bars &middot; Dark / light &middot; No dependencies
+        </p>
+      </div>
+      <button
+        class="btn"
+        style="background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.22); color: #fff; flex-shrink: 0;"
+        onclick="var h = document.documentElement; h.dataset.theme = h.dataset.theme === 'light' ? 'dark' : 'light'">
+        &#9680; Toggle Dark / Light
+      </button>
+    </div>
+  </div>
+
+  <!-- Callouts — no bars, no strips -->
+  <div class="section">
+    <div class="section-header">Callouts — icon + title carry the state, the card is neutral</div>
+
+    <div class="alert alert-info">
+      <span class="alert-icon">&#x2139;</span>
+      <div class="alert-body">
+        <span class="alert-title">Note</span>
+        <span class="alert-text">Supplementary context the reader should be aware of. The card surface is neutral — the icon and label carry the state.</span>
+      </div>
+    </div>
+
+    <div class="alert alert-success">
+      <span class="alert-icon">&#x2713;</span>
+      <div class="alert-body">
+        <span class="alert-title">Build complete</span>
+        <span class="alert-text">13 skills loaded, 5 rules active, 2 hooks wired. No errors detected.</span>
+      </div>
+    </div>
+
+    <div class="alert alert-warning">
+      <span class="alert-icon">&#x26A0;</span>
+      <div class="alert-body">
+        <span class="alert-title">Deprecation</span>
+        <span class="alert-text">The <code>paths</code> field in rules frontmatter has documented bugs. Use <code>globs</code> for path scoping instead.</span>
+      </div>
+    </div>
+
+    <div class="alert alert-error">
+      <span class="alert-icon">&#x2715;</span>
+      <div class="alert-body">
+        <span class="alert-title">Connection refused</span>
+        <span class="alert-text">Cannot reach <code>localhost:8080</code>. Verify the service is running and the port is not blocked.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cards -->
+  <div class="section">
+    <div class="section-header">Cards — glass throughout, two elevation levels</div>
+    <div class="grid-3">
+
+      <div class="card">
+        <div class="flex-c gap-2" style="margin-bottom: var(--sp-4);">
+          <span class="badge badge-accent">skill</span>
+        </div>
+        <h3 style="margin-bottom: var(--sp-2);">skill-create</h3>
+        <p style="color: var(--fg-2); font-size: var(--text-sm); margin-bottom: var(--sp-5);">Create or update skills from a user need or workflow. Includes a conditional research step for external specs.</p>
+        <div class="flex-c gap-2">
+          <button class="btn btn-primary" style="padding: 0.3em 0.9em; font-size: var(--text-xs);">Invoke</button>
+          <button class="btn btn-ghost" style="padding: 0.3em 0.9em; font-size: var(--text-xs);">Docs</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="flex-c gap-2" style="margin-bottom: var(--sp-4);">
+          <span class="badge badge-info">rule</span>
+          <span class="badge badge-success">always-on</span>
+        </div>
+        <h3 style="margin-bottom: var(--sp-2);">command-execution</h3>
+        <p style="color: var(--fg-2); font-size: var(--text-sm); margin-bottom: var(--sp-5);">Claude executes all commands via tools. Never outputs a command and asks the user to run it manually.</p>
+        <span style="font-size: var(--text-xs); color: var(--fg-3);">Loaded on every session start</span>
+      </div>
+
+      <div class="card card-raised">
+        <div class="flex-c gap-2" style="margin-bottom: var(--sp-4);">
+          <span class="badge badge-warning">hook</span>
+        </div>
+        <h3 style="margin-bottom: var(--sp-2);">check-memory</h3>
+        <p style="color: var(--fg-2); font-size: var(--text-sm); margin-bottom: var(--sp-5);">Detects Claude auto-memory files at session start and prompts migration into CLAUDE.md.</p>
+        <span style="font-size: var(--text-xs); color: var(--fg-3);">Event: SessionStart · .ps1 + .sh</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Convex vs Concave -->
+  <div class="section">
+    <div class="section-header">Convex (card) vs concave (card-concave) — same depth, opposite direction</div>
+    <div class="grid-2">
+
+      <div class="card">
+        <h3 style="margin-bottom: var(--sp-3);">Convex surface</h3>
+        <p style="color: var(--fg-2); font-size: var(--text-sm); margin-bottom: var(--sp-4);">Light hits top-left, shadow falls bottom-right. Element protrudes from the page — use for interactive surfaces, cards, buttons.</p>
+        <div class="flex-c gap-2">
+          <span class="badge badge-accent">panel</span>
+          <span class="badge">elevated</span>
+        </div>
+      </div>
+
+      <div class="card-concave">
+        <h3 style="margin-bottom: var(--sp-3);">Concave surface</h3>
+        <p style="color: var(--fg-2); font-size: var(--text-sm); margin-bottom: var(--sp-4);">Shadow falls top-left, light comes bottom-right. Element recesses into the page — use for wells, input areas, progress tracks, sidebar panels.</p>
+        <div class="flex-c gap-2">
+          <span class="badge">well</span>
+          <span class="badge">recessed</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card" style="margin-top: var(--sp-6); display: flex; flex-direction: column; gap: var(--sp-4);">
+      <p style="font-size: var(--text-xs); text-transform: uppercase; letter-spacing: var(--tracking-wide); color: var(--fg-3); font-weight: 700; margin: 0;">Concave — nested inside convex card</p>
+      <div class="card-concave" style="padding: var(--sp-4);">
+        <p style="margin: 0; color: var(--fg-2); font-size: var(--text-sm);">An input well, search area, or inset data panel. The outer card protrudes; the inner concave sinks — layered depth without a flat surface in sight.</p>
+      </div>
+      <div class="flex-c gap-3">
+        <button class="btn btn-primary" style="font-size: var(--text-xs); padding: 0.3em 0.9em;">Confirm</button>
+        <button class="btn btn-ghost" style="font-size: var(--text-xs); padding: 0.3em 0.9em;">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="section">
+    <div class="section-header">Stats / KPI</div>
+    <div class="card grid-4">
+      <div class="stat">
+        <span class="stat-value">2,847</span>
+        <span class="stat-label">Tokens saved</span>
+        <span class="stat-delta stat-delta-up">&#9650; 12%</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" style="color: var(--success);">13</span>
+        <span class="stat-label">Skills active</span>
+        <span class="stat-delta stat-delta-up">&#9650; 1 new</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" style="color: var(--info);">98%</span>
+        <span class="stat-label">Cache rate</span>
+        <span class="stat-delta stat-delta-down">&#9660; 0.3%</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" style="color: var(--fg-2);">5</span>
+        <span class="stat-label">Rules loaded</span>
+        <span class="stat-delta stat-delta-flat">unchanged</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="section">
+    <div class="section-header">Progress</div>
+    <div class="card" style="display: flex; flex-direction: column; gap: var(--sp-5);">
+      <div>
+        <div class="flex-c" style="justify-content: space-between; margin-bottom: var(--sp-2);">
+          <span style="font-size: var(--text-sm); font-weight: 600;">Phase 2 — Skills</span>
+          <span class="badge badge-success">complete</span>
+        </div>
+        <div class="progress"><div class="progress-bar progress-bar-success" style="width: 100%;"></div></div>
+      </div>
+      <div>
+        <div class="flex-c" style="justify-content: space-between; margin-bottom: var(--sp-2);">
+          <span style="font-size: var(--text-sm); font-weight: 600;">Phase 4 — Docs</span>
+          <span class="badge badge-warning" style="color: var(--warning);">in progress</span>
+        </div>
+        <div class="progress"><div class="progress-bar progress-bar-warning" style="width: 65%;"></div></div>
+      </div>
+      <div>
+        <div class="flex-c" style="justify-content: space-between; margin-bottom: var(--sp-2);">
+          <span style="font-size: var(--text-sm); font-weight: 600;">Phase 3 — Agents</span>
+          <span style="font-size: var(--text-xs); color: var(--fg-3);">not started</span>
+        </div>
+        <div class="progress"><div class="progress-bar" style="width: 0%;"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="section">
+    <div class="section-header">Table</div>
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Artifact</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th>Updated</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>skill-create</code></td>
+            <td style="color: var(--fg-2);">Authoring</td>
+            <td><span class="badge badge-success">stable</span></td>
+            <td style="color: var(--fg-3);">2026-06-11</td>
+          </tr>
+          <tr>
+            <td><code>mermaid</code></td>
+            <td style="color: var(--fg-2);">Visualization</td>
+            <td><span class="badge badge-success">stable</span></td>
+            <td style="color: var(--fg-3);">2026-06-11</td>
+          </tr>
+          <tr>
+            <td><code>lean-analysis</code></td>
+            <td style="color: var(--fg-2);">Audit</td>
+            <td><span class="badge badge-warning">beta</span></td>
+            <td style="color: var(--fg-3);">2026-06-11</td>
+          </tr>
+          <tr>
+            <td><code>html-style</code></td>
+            <td style="color: var(--fg-2);">UI</td>
+            <td><span class="badge badge-info">rule</span></td>
+            <td style="color: var(--fg-3);">2026-06-11</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Code -->
+  <div class="section">
+    <div class="section-header">Code</div>
+<pre><code>// Load skills index and enumerate available skills
+const raw    = await readFile('.claude/skills/skills.index.toon');
+const skills = parseTOON(raw);
+
+for (const s of skills) {
+  console.log(`  ${s.name.padEnd(20)} ${s.description}`);
+}
+// → 13 skills: skill-create, toon, mermaid, rule-create ...</code></pre>
+  </div>
+
+  <!-- Typography & controls -->
+  <div class="section">
+    <div class="section-header">Typography</div>
+    <div class="card">
+      <h2 style="margin-bottom: var(--sp-2);">Intentional heading weight</h2>
+      <p style="margin-bottom: var(--sp-4);">Body copy with 1.65 line-height. Use <a href="#">accent links</a> for navigation. Reference <code>inline code</code> for file paths and identifiers. Never hardcode hex — use <code>var(--token)</code>.</p>
+
+      <blockquote>Rules on-demand via CLAUDE.md routing table; globs preferred over paths for user-project scoping — an intentional decision to avoid documented path-matching bugs in Claude Code.</blockquote>
+
+      <dl style="margin-top: var(--sp-6);">
+        <dt>Skills</dt>
+        <dd>Reusable authoring workflows invoked by name from a session context</dd>
+        <dt>Rules</dt>
+        <dd>Advisory guidance loaded on-demand or always; never executed as code</dd>
+        <dt>Hooks</dt>
+        <dd>Lifecycle automation at specific Claude Code events (SessionStart, PreToolUse)</dd>
+      </dl>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="section">
+    <div class="section-header">Buttons / Badges / Keyboard</div>
+    <div class="card" style="display: flex; flex-direction: column; gap: var(--sp-7);">
+
+      <div>
+        <p style="font-size: var(--text-xs); text-transform: uppercase; letter-spacing: var(--tracking-wide); color: var(--fg-3); margin-bottom: var(--sp-3); font-weight: 700;">Buttons</p>
+        <div class="flex-c flex-w gap-3">
+          <button class="btn btn-primary">Primary Action</button>
+          <button class="btn">Glass Button</button>
+          <button class="btn btn-ghost">Ghost</button>
+          <a href="#" class="btn">Link</a>
+        </div>
+      </div>
+
+      <div>
+        <p style="font-size: var(--text-xs); text-transform: uppercase; letter-spacing: var(--tracking-wide); color: var(--fg-3); margin-bottom: var(--sp-3); font-weight: 700;">Badges</p>
+        <div class="flex-c flex-w gap-2">
+          <span class="badge">neutral</span>
+          <span class="badge badge-accent">accent</span>
+          <span class="badge badge-info">info</span>
+          <span class="badge badge-success">success</span>
+          <span class="badge badge-warning">warning</span>
+          <span class="badge badge-error">error</span>
+        </div>
+      </div>
+
+      <div>
+        <p style="font-size: var(--text-xs); text-transform: uppercase; letter-spacing: var(--tracking-wide); color: var(--fg-3); margin-bottom: var(--sp-3); font-weight: 700;">Keyboard shortcuts</p>
+        <p style="font-size: var(--text-sm); color: var(--fg-2);">
+          <kbd>Ctrl</kbd>+<kbd>K</kbd> &nbsp; command palette &nbsp;&nbsp;
+          <kbd>Esc</kbd> &nbsp; cancel &nbsp;&nbsp;
+          <kbd>&#x21E7;</kbd>+<kbd>Enter</kbd> &nbsp; confirm
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,19 @@
+# lean-review-report | TOON format | scope: FILL
+date: FILL
+triggered_by: lean-review
+scope: FILL
+dimension_sets_applied: FILL
+verdict: FILL
+
+# findings
+id | dimension | severity | location | description | recommended_action
+FILL | FILL | FILL | FILL | FILL | FILL
+
+# stats
+critical: FILL
+major: FILL
+minor: FILL
+info: FILL
+total: FILL
+
+top_recommendation: FILL

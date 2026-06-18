@@ -1,0 +1,173 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+/* mage-base design tokens — v0.3.0 */
+
+:root {
+  /* Brand gradient — forest green → teal → sky blue */
+  --brand-start:  #2FBF5E;
+  --brand-mid:    #0D9488;
+  --brand-end:    #0284C7;
+  --brand-grad:   linear-gradient(135deg, var(--brand-start), var(--brand-mid), var(--brand-end));
+
+  /* Semantic colors */
+  --accent:     #2FBF5E;
+  --accent-dim: #1E9447;
+  --success:    #2EB88A;
+  --warning:    #F59E0B;
+  --error:      #EF4444;
+  --info:       #568EE2;
+
+  /* Surface — dark default */
+  --bg:     #0F0F12;
+  --bg-1:   #1A1A1E;
+  --bg-2:   #26262C;
+  --fg:     #FFFFFF;
+  --fg-2:   #A1A1AA;
+  --fg-3:   #71717A;
+  --border: rgba(255, 255, 255, 0.09);
+
+  /* Glass — full bevel (website-style: light top-left + dark bottom-right) */
+  --glass-fill:   rgba(255, 255, 255, 0.07);
+  --glass-blur:   blur(18px) saturate(1.6);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.13);
+
+  /* Full 3-direction bevel — the primary 3D cue */
+  --bevel:
+    inset 2px 2px 5px rgba(255, 255, 255, 0.13),
+    inset -2px -2px 5px rgba(0, 0, 0, 0.45);
+
+  /* Concave / recessed bevel — inset surfaces, pressed states */
+  --bevel-concave:
+    inset 2px 2px 6px rgba(0, 0, 0, 0.55),
+    inset -2px -2px 6px rgba(255, 255, 255, 0.07);
+
+  /* Layered shadows */
+  --shadow-sm:
+    0 2px 4px rgba(0, 0, 0, 0.45),
+    0 4px 8px rgba(0, 0, 0, 0.25);
+  --shadow-md:
+    0 2px 4px rgba(0, 0, 0, 0.45),
+    0 6px 12px rgba(0, 0, 0, 0.30),
+    0 12px 24px rgba(0, 0, 0, 0.18);
+  --shadow-lg:
+    0 2px 4px rgba(0, 0, 0, 0.40),
+    0 6px 12px rgba(0, 0, 0, 0.30),
+    0 14px 28px rgba(0, 0, 0, 0.22),
+    0 24px 48px rgba(0, 0, 0, 0.16);
+
+  /* Typography */
+  --font-sans:      "Roboto", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --font-mono:      "Roboto Mono", "Consolas", "Monaco", monospace;
+  --text-xs:        0.75rem;
+  --text-sm:        0.875rem;
+  --text-base:      clamp(0.9375rem, 0.9rem + 0.28vw, 1.1875rem);
+  --text-lg:        1.25rem;
+  --text-xl:        1.5rem;
+  --text-2xl:       2rem;
+  --text-3xl:       2.5rem;
+  --leading-tight:  1.15;
+  --leading-body:   1.65;
+  --tracking-tight: -0.025em;
+  --tracking-wide:  0.08em;
+
+  /* Spacing — 4 px base */
+  --sp-1:  0.25rem;
+  --sp-2:  0.5rem;
+  --sp-3:  0.75rem;
+  --sp-4:  1rem;
+  --sp-5:  1.25rem;
+  --sp-6:  1.5rem;
+  --sp-8:  2rem;
+  --sp-10: 2.5rem;
+  --sp-12: 3rem;
+  --sp-16: 4rem;
+
+  /* Border radius */
+  --r-sm:   0.125rem;
+  --r-md:   0.1875rem;
+  --r-lg:   0.3rem;
+  --r-xl:   0.45rem;
+  --r-pill: 999px;
+
+  /* Motion */
+  --dur-fast:  0.12s;
+  --dur-mid:   0.22s;
+  --dur-slow:  0.38s;
+  --ease-out:  cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Light mode */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg:     #F0F0F3;
+    --bg-1:   #FAFAFA;
+    --bg-2:   #E4E4E8;
+    --fg:     #1A1A1F;
+    --fg-2:   #71717A;
+    --fg-3:   #A1A1AA;
+    --border: rgba(0, 0, 0, 0.09);
+    --glass-fill:   rgba(255, 255, 255, 0.65);
+    --glass-blur:   blur(20px) saturate(1.5);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.80);
+    --bevel:
+      inset 2px 2px 5px rgba(255, 255, 255, 0.92),
+      inset -2px -2px 5px rgba(0, 0, 0, 0.07);
+    --bevel-concave:
+      inset 2px 2px 6px rgba(0, 0, 0, 0.15),
+      inset -2px -2px 6px rgba(255, 255, 255, 0.98);
+    --shadow-sm:
+      0 2px 4px rgba(0, 0, 0, 0.10),
+      0 4px 8px rgba(0, 0, 0, 0.06);
+    --shadow-md:
+      0 2px 4px rgba(0, 0, 0, 0.10),
+      0 6px 12px rgba(0, 0, 0, 0.08),
+      0 12px 24px rgba(0, 0, 0, 0.05);
+    --shadow-lg:
+      0 2px 4px rgba(0, 0, 0, 0.10),
+      0 6px 12px rgba(0, 0, 0, 0.08),
+      0 14px 28px rgba(0, 0, 0, 0.06),
+      0 24px 48px rgba(0, 0, 0, 0.04);
+  }
+}
+
+[data-theme="light"] {
+  --bg:     #F0F0F3;
+  --bg-1:   #FAFAFA;
+  --bg-2:   #E4E4E8;
+  --fg:     #1A1A1F;
+  --fg-2:   #71717A;
+  --fg-3:   #A1A1AA;
+  --border: rgba(0, 0, 0, 0.09);
+  --glass-fill:   rgba(255, 255, 255, 0.65);
+  --glass-blur:   blur(20px) saturate(1.5);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.80);
+  --bevel:
+    inset 2px 2px 5px rgba(255, 255, 255, 0.92),
+    inset -2px -2px 5px rgba(0, 0, 0, 0.07);
+  --bevel-concave:
+    inset 2px 2px 6px rgba(0, 0, 0, 0.15),
+    inset -2px -2px 6px rgba(255, 255, 255, 0.98);
+  --shadow-sm:
+    0 2px 4px rgba(0, 0, 0, 0.10),
+    0 4px 8px rgba(0, 0, 0, 0.06);
+  --shadow-md:
+    0 2px 4px rgba(0, 0, 0, 0.10),
+    0 6px 12px rgba(0, 0, 0, 0.08),
+    0 12px 24px rgba(0, 0, 0, 0.05);
+  --shadow-lg:
+    0 2px 4px rgba(0, 0, 0, 0.10),
+    0 6px 12px rgba(0, 0, 0, 0.08),
+    0 14px 28px rgba(0, 0, 0, 0.06),
+    0 24px 48px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] {
+  --bg:     #0F0F12;
+  --bg-1:   #1A1A1E;
+  --bg-2:   #26262C;
+  --fg:     #FFFFFF;
+  --fg-2:   #A1A1AA;
+  --fg-3:   #71717A;
+  --border: rgba(255, 255, 255, 0.09);
+}

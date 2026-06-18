@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-mcp.json",
+  "mcpServers": {
+    "filesystem": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "${CLAUDE_PROJECT_DIR:-.}"],
+      "timeout": 30000
+    },
+    "api-server": {
+      "type": "http",
+      "url": "https://mcp.example.com/endpoint",
+      "headers": {
+        "Authorization": "Bearer ${API_KEY}"
+      },
+      "timeout": 60000,
+      "alwaysLoad": false
+    },
+    "internal-api": {
+      "type": "http",
+      "url": "https://mcp.internal.example.com",
+      "headersHelper": "/opt/bin/get-mcp-auth-headers.sh",
+      "timeout": 30000
+    }
+  }
+}

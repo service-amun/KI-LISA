@@ -1,0 +1,28 @@
+# Skills index. TOON: header row " | "-separated; one skill per row. description is verbatim from the skill's frontmatter. agents = assigned agents (comma-separated; ~ = main-session only).
+name | description | agents
+skills | Create new skills or update existing skills from a user need, workflow, or draft instruction. Use when a repeatable task should become a reusable skill with a valid SKILL.md and appropriate assets. | ~
+toon | Convert JSON or YAML to TOON format for token-efficient LLM input. Use when reducing prompt token count on tabular or structured data, or when TOON output is explicitly requested. | ~
+mermaid | Generate visually rich, GitHub-renderable Mermaid diagrams. All diagram types, base-ui color system, semantic shapes, classDef, linkStyle, themeVariables, and harness use cases. | ~
+rules | Create or update Claude Code rule files in .claude/rules/ — advisory guidance injected into context. For coding standards, conventions, workflow, communication style, or architecture. | ~
+file-claude | Create, update, or audit CLAUDE.md files. Use when a project needs always-loaded context, when an existing CLAUDE.md is bloated or stale, or when content should be migrated to rules, skills, or hooks. | ~
+settings | Configure, audit, or maintain settings.json and settings.local.json. Use when adding permissions, model selection, env vars, output style, or any other Claude Code runtime configuration. | ~
+hooks | Create or update Claude Code hook configurations — settings.json entries and companion scripts for lifecycle event automation, policy enforcement, logging, and validation. | ~
+mcp | Author, audit, or repair .mcp.json files for Claude Code MCP servers. All transport types (stdio, http, sse, ws), credential handling, scope selection, and settings.json permission links. | ~
+subagents | Create or update Claude Code subagent files — frontmatter and system prompt for isolated specialist agents with constrained tools and custom roles. Flat-file or index-loaded layouts. | ~
+lean-review | Universal read-only quality review of any artifact — code, config, docs, or a whole harness — across correctness, simplification, performance, tests, waste, coherence, and style. Findings only. | ag-cqo,ag-cto,ag-cso
+audit-security | Security analysis for source code: OWASP Top 10:2025, injection, access control, supply chain, crypto failures, insecure deserialization. Returns severity-classified findings. Does not modify files. | ag-cto,ag-cqo
+proofread | Verify a finished deliverable before it ships — numbers consistent, names and proper nouns right, facts accurate, internally consistent, logically sound. Read-only; returns severity findings. | ag-cqo
+audit-legal | Legal compliance triage — EU AI Act, GDPR, and German financial, website, employment, and consulting law. Loads obligation clusters by profile, auto-updates from source. Not legal advice. | ag-cqo
+sota | Grounded, cross-verified web research against the current state of the art; refresh a stale artifact to the current standard or report an external assessment, as the context requires. | ag-cso
+explain | Explain any topic at the right depth — simple (plain language, one analogy) or deep (mechanisms, trade-offs, design decisions). Depth inferred from context or stated explicitly. | ~
+file-readme | Create or update README.md files following GitHub conventions. Produces human-facing, visually structured project documentation. Supports multilingual output via separate language files. | ~
+file-changelog | Create, update, or audit CHANGELOG.md files following Keep a Changelog 1.1.0 and Semantic Versioning. Covers init, adding entries, cutting releases, and migrating non-standard formats. | ~
+file-license | Create or update LICENSE files and third-party attribution. Pre-stored texts for MIT, Apache-2.0, BSD-2/3-Clause, ISC, Unlicense. Covers license selection, SPDX IDs, and compliance. | ~
+frontend | Generate standalone HTML using any stored UI system; falls back to base-ui (glassmorphism, no deps) when none is registered. Component API, alert patterns, document shell, accessibility. | ~
+echarts | Generate Apache ECharts 5 charts in standalone HTML using base-ui tokens. Correct option syntax, dark/light retheme, resize handling, 8 chart-type templates. For interactive data viz. | ~
+new-project | Scaffold a new Claude Code project — directory structure, desktop shortcut, and delegation to native skills per document. For projects under ~/.claude/projects/ or nested in a project. | ~
+file-project | Create or update PROJECT.md — the LLM-facing complement to README.md. Documents goal, architecture decisions with rationale, non-goals, and constraints. For project start or major changes. | ~
+outputstyle | Create, update, or audit Claude Code output style files in .claude/output-styles/ — a session-wide communication mode (tone, verbosity, persona, format). One style active per session. | ~
+masterprompt | Generate a maximal, comprehensive masterprompt on any topic — research the domain, then build the most complete expert prompt: persona, sub-domains, edge cases, behavioral mandates. | ~
+tasks | Guide to Claude Code's two task systems: work board (TaskCreate/TaskUpdate) and background execution (Bash + TaskOutput). Decision framework, patterns, anti-patterns, and dependency design. | ~
+loop | Claude Code loop setup and operation: /loop, CronCreate, and ScheduleWakeup. Decision framework, loop.md authoring, context hygiene, self-termination patterns, and platform caveats. | ~
