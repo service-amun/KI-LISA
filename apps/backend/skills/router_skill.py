@@ -26,9 +26,18 @@ _COMPLIANCE = [
     "vertragsrecht", "arbeitsrecht", "steuerrecht", "impressumspflicht",
 ]
 
+# Dokument / Konzept / HTML → großes Modell, maximaler Raum
+_DOKUMENT = [
+    "html", "css", "dokument erstell", "erstelle ein dokument", "erstelle ein konzept",
+    "erstelle einen bericht", "erstell einen", "erstell eine analyse", "erstell ein",
+    "konzept erstell", "konzeptpapier", "analyse erstell", "bericht erstell",
+    "präsentation", "pitch deck", "executive summary", "projektplan erstell",
+    "vorlage erstell", "checkliste erstell", "übersicht erstell",
+]
+
 # Kreatives Schreiben → großes Modell, kreativer
 _KREATIV = [
-    "schreib", "verfasse", "erstelle einen", "formulier", "übersetze", "briefe",
+    "schreib", "verfasse", "formulier", "übersetze", "briefe",
     "e-mail", "anschreiben", "einladung", "pressemitteilung", "stellenausschreibung",
 ]
 
@@ -47,7 +56,16 @@ def classify(text: str) -> RouteConfig:
     # Compliance und Kreativ-Keywords haben Vorrang vor dem Wortzähler —
     # "Schreib mir eine E-Mail" ist 5 Wörter, aber klar kreativ, nicht trivial.
 
-    # 1. Compliance / Rechtliches → 70B, präzise, viel Raum
+    # 1. Dokument / Konzept / HTML → 70B, maximales Token-Budget
+    if any(kw in t for kw in _DOKUMENT):
+        return RouteConfig(
+            modell="llama-3.3-70b-versatile",
+            max_tokens=6000,
+            temperature=0.65,
+            kontext_nachrichten=4,
+        )
+
+    # 2. Compliance / Rechtliches → 70B, präzise, viel Raum
     if any(kw in t for kw in _COMPLIANCE):
         return RouteConfig(
             modell="llama-3.3-70b-versatile",
@@ -56,16 +74,16 @@ def classify(text: str) -> RouteConfig:
             kontext_nachrichten=8,
         )
 
-    # 2. Kreatives Schreiben → 70B, kreativer
+    # 3. Kreatives Schreiben → 70B, kreativer
     if any(kw in t for kw in _KREATIV):
         return RouteConfig(
             modell="llama-3.3-70b-versatile",
-            max_tokens=1024,
+            max_tokens=2048,
             temperature=0.72,
             kontext_nachrichten=6,
         )
 
-    # 3. Kurze Grüße / Bestätigungen (erst jetzt, nach Keyword-Checks) → 8B
+    # 4. Kurze Grüße / Bestätigungen (erst jetzt, nach Keyword-Checks) → 8B
     # <= 2 Wörter oder explizites Muster — 4-Wort-Fragen sind keine Grüße
     if woerter <= 2 or _SIMPLE_RE.match(t):
         return RouteConfig(
@@ -75,10 +93,10 @@ def classify(text: str) -> RouteConfig:
             kontext_nachrichten=4,
         )
 
-    # 4. Alles andere → 70B, ausgewogen
+    # 5. Alles andere → 70B, ausgewogen
     return RouteConfig(
         modell="llama-3.3-70b-versatile",
-        max_tokens=768,
+        max_tokens=1500,
         temperature=0.55,
         kontext_nachrichten=6,
     )

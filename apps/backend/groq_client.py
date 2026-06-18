@@ -157,7 +157,7 @@ def chat(
     )
 
     try:
-        with urllib.request.urlopen(req, timeout=30) as r:
+        with urllib.request.urlopen(req, timeout=90) as r:
             data = json.loads(r.read())
         text = data["choices"][0]["message"]["content"]
         tokens = data.get("usage", {}).get("total_tokens", 0)

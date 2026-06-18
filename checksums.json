@@ -1,11 +1,11 @@
 {
-  "apps/frontend/index.html": "98e8a43d04e8b95d52b890958076929ba73f4a1ddac1939ef30eb1f300188da6",
   "apps/backend/main.py": "d26659dac70a95ee3a9669b5d94b9e143f2804a100c814ba42203d481edaa194",
-  "apps/backend/groq_client.py": "79cd21454dd0a9cf13c387dee08b9131c76503b13ad8b321de9ce9f1d7bbfc17",
+  "apps/backend/groq_client.py": "e1c60be3e2e3c992d85c4ac38375979eda5e158ef5018e9d0d0909b65878b9e5",
+  "apps/backend/compliance_context.py": "ae5b910017181871fa02839d8233a563d7cec75a30465f950d32ac895de26ce1",
   "apps/backend/session_manager.py": "82c725ef90857247904b14062176f4a829a8fdc03f7e1443be1799d79b7bcda6",
-  "apps/backend/compliance_context.py": "bfd7afefba70fe069448e00ca6df111c199d88e7e71a82999c4b66038c1aa278",
-  "apps/backend/routers/datei_upload.py": "daedb5fe04b7f80b54543b2cd560c3071611215d65cfc6a6255cc48ed461634a",
-  "apps/backend/skills/router_skill.py": "68814124958feee2bfc9bf17f0b9e567239a004661df32ec20b8cb828082b599",
+  "apps/backend/skills/router_skill.py": "7db888454603acbf678447fcc9a62e05b93dd878edcfef2415c5141dea3a8285",
   "apps/backend/skills/guardrail_skill.py": "ff3975b9677312a2d2d0912209b8d36dd1e09faf30b5241a0e48b16531ff63f6",
-  "requirements.txt": "656aa76ff8ef0da21c91711913da1e0d23111cfd2ada085df2966a61bc5be0ad"
+  "apps/backend/skills/reflection_skill.py": "e7f1095fbf62c64310f5c047eb427cf44f55c364bc108daf8f4615c2f8917d1b",
+  "apps/backend/compliance/weekly_checker.py": "c7138f08da3b6ce5600c87585633ea385e416125bdc1c7def6a660ab1c34b19a",
+  "apps/frontend/index.html": "82ba521047dcae9871d4ef2212f45fcf834ec77539b0504d5548bda3e2b94c1f"
 }

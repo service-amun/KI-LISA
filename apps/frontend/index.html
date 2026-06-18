@@ -291,6 +291,20 @@ body {
   transition: background .12s;
 }
 .msg-whatsapp:hover { background: #1da851; }
+.msg-html-dl {
+  display: inline-block;
+  background: #2e7d32;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 4px 11px;
+  font-size: 12px;
+  cursor: pointer;
+  margin-top: 6px;
+  margin-left: 4px;
+  transition: background .12s;
+}
+.msg-html-dl:hover { background: #1b5e20; }
 .msg-nutzer .msg-blase {
   background: var(--schwarz);
   color: var(--weiss);
@@ -1619,40 +1633,54 @@ async function nachrichtSenden() {
     tippindikatorVerstecken();
 
     if (!r.ok) {
-      nachrichtAnzeigen('ki', 'Es gab ein technisches Problem. Bitte versuchen Sie es erneut.');
+      const fehlerCode = r.status;
+      const fehlerText = fehlerCode === 429
+        ? '⏱ Zu viele Anfragen. Bitte warten Sie einen Moment.'
+        : fehlerCode === 504 || fehlerCode === 0
+          ? '⏱ Die KI braucht länger als erwartet. Bitte versuchen Sie es erneut — bei langen Dokumenten normal.'
+          : `⚠ Technisches Problem (${fehlerCode}). Bitte versuchen Sie es erneut.`;
+      nachrichtAnzeigen('ki', fehlerText);
       document.getElementById('senden-btn').disabled = false;
     } else {
       const d = await r.json();
 
       const pmap = d.platzhalter || {};
       if (d.blocked) {
-        // Absolut verboten (EU AI Act Art. 5) — Antwort zeigen, aber sperren
         nachrichtAnzeigen('ki', d.text, [], 'rot', pmap);
         complianceAktualisieren({ risk_level: 'blocked' });
         eingabeSperren('rot');
       } else if (d.compliance && d.compliance.requires_human_oversight) {
-        // Hochrisiko (rot) — Antwort zeigen, Mensch muss bestätigen
         nachrichtAnzeigen('ki', d.text, d.warnings || [], 'rot', pmap);
         complianceAktualisieren(d.compliance);
         eingabeSperren('rot');
         chatListeLaden();
       } else if (d.warnings && d.warnings.length > 0) {
-        // Datenschutz-Hinweis (orange) — Antwort zeigen, Mensch muss bestätigen
         nachrichtAnzeigen('ki', d.text, d.warnings, 'orange', pmap);
         complianceAktualisieren(d.compliance);
         eingabeSperren('orange');
         chatListeLaden();
       } else {
-        // Grün — direkt weiter
-        nachrichtAnzeigen('ki', d.text, [], false, pmap);
+        const istHtml = d.text && (d.text.trim().toLowerCase().startsWith('<!doctype') || d.text.trim().startsWith('<!DOCTYPE'));
+        if (istHtml) {
+          // Titelzeile aus <title> extrahieren für die Vorschau
+          const titelMatch = d.text.match(/<title[^>]*>([^<]+)<\/title>/i);
+          const dokumentTitel = titelMatch ? titelMatch[1].trim() : 'HTML-Dokument';
+          nachrichtAnzeigen('ki', `📄 **${dokumentTitel}**\nIhr Dokument wurde erstellt und ist bereit zum Herunterladen.`, [], false, pmap);
+          htmlDownloadAnbieten(d.text);
+        } else {
+          nachrichtAnzeigen('ki', d.text, [], false, pmap);
+        }
         complianceAktualisieren(d.compliance);
         chatListeLaden();
         document.getElementById('senden-btn').disabled = false;
       }
     }
-  } catch {
+  } catch (err) {
     tippindikatorVerstecken();
-    nachrichtAnzeigen('ki', '⚠ Keine Verbindung zum AILIZA System. Bitte prüfen Sie, ob AILIZA gestartet ist.');
+    const istTimeout = err.name === 'AbortError' || err.name === 'TimeoutError';
+    nachrichtAnzeigen('ki', istTimeout
+      ? '⏱ Zeitüberschreitung — lange Dokumente brauchen etwas mehr Zeit. Bitte erneut versuchen.'
+      : '⚠ Keine Verbindung zum AILIZA System. Bitte prüfen Sie, ob AILIZA gestartet ist.');
     document.getElementById('senden-btn').disabled = false;
   }
 }
@@ -1863,6 +1891,40 @@ function inOutlookOeffnen(btn) {
 
   const mailto = 'mailto:?subject=' + encodeURIComponent(betreff) + '&body=' + encodeURIComponent(koerper);
   window.location.href = mailto;
+}
+
+// ── HTML-Dokument herunterladen ───────────────────────────────────────────
+function htmlDownloadAnbieten(htmlText) {
+  // Letztes KI-Nachrichten-Div finden
+  const alle = document.querySelectorAll('.msg-ki');
+  if (!alle.length) return;
+  const letzteMsg = alle[alle.length - 1];
+
+  // Dateinamen aus <title> ableiten, sonst Fallback
+  const titelMatch = htmlText.match(/<title[^>]*>([^<]+)<\/title>/i);
+  const dateiname = titelMatch
+    ? titelMatch[1].trim().replace(/[^a-z0-9äöüÄÖÜß\-_. ]/gi, '').replace(/\s+/g, '_').slice(0, 60) + '.html'
+    : 'ailiza_dokument.html';
+
+  const btn = document.createElement('button');
+  btn.className = 'msg-html-dl';
+  btn.title = 'Als HTML-Datei herunterladen';
+  btn.innerHTML = '⬇ Dokument herunterladen';
+  btn.onclick = function() {
+    const blob = new Blob([htmlText], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = dateiname;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    btn.textContent = '✓ Heruntergeladen';
+    btn.style.background = '#1b5e20';
+    setTimeout(() => { btn.innerHTML = '⬇ Dokument herunterladen'; btn.style.background = ''; }, 3000);
+  };
+  letzteMsg.appendChild(btn);
 }
 
 // ── Skills (Option B — mit eigenen Karten) ────────────────────────────────
