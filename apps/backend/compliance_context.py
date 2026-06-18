@@ -6,6 +6,7 @@ und baut daraus einen kompakten System-Prompt.
 """
 
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import Optional
 
 
@@ -166,7 +167,8 @@ class ComplianceContextManager:
 
     def build_system_prompt(self, user_message: str, session_ctx: Optional["ComplianceContext"] = None) -> tuple[str, ComplianceContext]:
         ctx = self.analyze(user_message)
-        parts = [self.BASE_SYSTEM_PROMPT]
+        heute = datetime.now(timezone.utc).strftime("%-d. %B %Y")
+        parts = [self.BASE_SYSTEM_PROMPT, f"Heute ist der {heute}."]
 
         # Nur aktuelle Nachricht für Artikel-Selektion — spart Token
         # (Die Gesprächshistorie im Kontext liefert den Rest)

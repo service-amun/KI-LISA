@@ -19,6 +19,8 @@ _SUCHE_MUSTER = re.compile(
     r"\b(aktuell|heute|news|neuigkeit|2025|2026|stand\s+\d{4}|"
     r"aktuelle\s+(gesetz|recht|regel|vorschrift|nachrichten?)|"
     r"was\s+(ist|sind|gilt|steht)\s+(gerade|aktuell|jetzt)|"
+    r"neueste[sr]?|letzte[sr]?\s+(gesetz|recht|regel|version|änderung)|"
+    r"wann\s+(tritt|gilt|ändert|wurde)|"
     r"social.?media|instagram|tiktok|linkedin|twitter|facebook)\b",
     re.IGNORECASE,
 )
