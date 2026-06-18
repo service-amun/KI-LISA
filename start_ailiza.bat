@@ -29,7 +29,7 @@ if not exist "apps\backend\.env" (
     exit /b 0
 )
 
-:: Pakete installieren (muss VOR dem Updater laufen, damit Abhaengigkeiten vorhanden sind)
+:: Pakete installieren
 echo  Pruefe Pakete...
 python -m pip install -r requirements.txt -q --disable-pip-version-check
 if errorlevel 1 (
@@ -40,25 +40,52 @@ if errorlevel 1 (
 echo  Pakete OK.
 echo.
 
-:: Auto-Update (laeuft nach pip install, damit Updater-Abhaengigkeiten verfuegbar sind)
+:: Auto-Update
 echo  Pruefe auf Updates...
 python updater.py
 echo.
 
-:: PYTHONPATH explizit auf das Projektverzeichnis setzen,
-:: damit Python das 'apps'-Paket immer findet
+:: PYTHONPATH setzen — stellt sicher dass Python 'apps' findet
 set PYTHONPATH=%~dp0
 
-:: Server starten
-:: HINWEIS: Fuer Railway/Container-Deployments --host 0.0.0.0 und --port $PORT verwenden (siehe Procfile).
-echo  AILIZA laeuft auf: http://127.0.0.1:8001/dashboard
-echo  Browser oeffnet sich gleich...
-echo  Zum Beenden: Strg+C oder Fenster schliessen
-echo.
+:: Autostart beim Windows-Login einrichten (einmalig, lautlos)
+schtasks /query /tn "AILIZA" >nul 2>&1
+if errorlevel 1 (
+    schtasks /create /tn "AILIZA" /tr "\"%~dp0start_ailiza_hintergrund.bat\"" /sc onlogon /rl limited /f >nul 2>&1
+    if not errorlevel 1 echo  Autostart eingerichtet — AILIZA startet kuenftig automatisch beim Einloggen.
+)
 
-start "" cmd /c "timeout /t 3 /nobreak >nul && start http://127.0.0.1:8001/dashboard"
+:: Netzwerk-IP ermitteln fuer Buero-Betrieb
+for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /c:"IPv4"') do (
+    set LAN_IP=%%a
+    goto :ip_gefunden
+)
+:ip_gefunden
+set LAN_IP=%LAN_IP: =%
 
-python -m uvicorn apps.backend.main:app --port 8001 --host 127.0.0.1
+:: Modus aus .env lesen (AILIZA_NETZWERK=1 aktiviert Buero-Modus)
+set NETZWERK=0
+for /f "tokens=1,* delims==" %%a in ('type "apps\backend\.env" ^| findstr /i "AILIZA_NETZWERK"') do (
+    if /i "%%b"=="1" set NETZWERK=1
+    if /i "%%b"=="true" set NETZWERK=1
+)
+
+if "%NETZWERK%"=="1" (
+    echo  BUERO-MODUS: Alle im gleichen WLAN koennen AILIZA nutzen.
+    echo  Lokale Adresse:  http://127.0.0.1:8001/dashboard
+    echo  Netzwerkadresse: http://%LAN_IP%:8001/dashboard
+    echo  ^(Diese Adresse an Ihre Kollegen weitergeben^)
+    echo.
+    start "" cmd /c "timeout /t 3 /nobreak >nul && start http://127.0.0.1:8001/dashboard"
+    python -m uvicorn apps.backend.main:app --port 8001 --host 0.0.0.0
+) else (
+    echo  AILIZA laeuft auf: http://127.0.0.1:8001/dashboard
+    echo  Browser oeffnet sich gleich...
+    echo  Tipp: AILIZA_NETZWERK=1 in .env aktiviert den Buero-Modus fuer alle Kollegen.
+    echo.
+    start "" cmd /c "timeout /t 3 /nobreak >nul && start http://127.0.0.1:8001/dashboard"
+    python -m uvicorn apps.backend.main:app --port 8001 --host 127.0.0.1
+)
 
 echo.
 echo  AILIZA wurde beendet.
