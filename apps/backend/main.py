@@ -355,6 +355,38 @@ def chat_in_session(session_id: str, body: ChatRequest, request: Request):
                 "session_id": session_id[:8] + "...",
                 "content_stored": False,
             })
+            return {
+                "text": policy.message,
+                "warnings": policy.warnings,
+                "blocked": True,
+                "compliance": {},
+            }
+
+        if policy.decision == "require_approval":
+            # Anfrage in DB speichern — Admin kann Freigabe erteilen
+            sanitized_preview = (policy.sanitized_text or body.message)[:200]
+            approval_id = database.create_approval(
+                run_id=0,
+                task=sanitized_preview,
+                reason=f"Policy-Entscheidung: Freigabe nötig | Datenklassen: {policy.policy.get('data_classes', [])}",
+            )
+            write_audit_entry("session.approval_required", {
+                "session_id": session_id[:8] + "...",
+                "approval_id": approval_id,
+                "data_classes": policy.policy.get("data_classes", []),
+            })
+            return {
+                "text": (
+                    f"Diese Anfrage benötigt eine Admin-Freigabe (Nr. {approval_id}). "
+                    "Ihr Admin kann sie im Dashboard unter 'Freigaben' genehmigen oder ablehnen."
+                ),
+                "warnings": policy.warnings,
+                "blocked": False,
+                "approval_pending": True,
+                "approval_id": approval_id,
+                "compliance": {"decision": "require_approval"},
+            }
+
         return {
             "text": policy.message,
             "warnings": policy.warnings,
