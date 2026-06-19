@@ -21,6 +21,25 @@ class ToolResult:
     error: Optional[str] = None
 
 
+class _SSRFSafeRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """
+    Validiert jeden Redirect-Ziel gegen SSRF-Regeln, bevor er gefolgt wird.
+    Verhindert, dass ein öffentlicher Server auf 192.168.x / 169.254.x weiterleitet.
+    """
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        # Import hier um zirkuläre Imports zu vermeiden
+        from ailiza_guard import _check_url_safety
+        safe, reason = _check_url_safety(newurl)
+        if not safe:
+            raise urllib.error.HTTPError(
+                newurl, 403,
+                f"SSRF-Schutz: Redirect auf interne Adresse blockiert — {reason}",
+                headers, None,
+            )
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
 def run_search(query: str) -> ToolResult:
     api_key = os.getenv("TAVILY_API_KEY", "")
     if not api_key:
@@ -72,7 +91,8 @@ def run_fetch(url: str) -> ToolResult:
             url,
             headers={"User-Agent": "AILIZA/1.0 (EU AI Act konform)"},
         )
-        with urllib.request.urlopen(req, timeout=10) as r:
+        opener = urllib.request.build_opener(_SSRFSafeRedirectHandler)
+        with opener.open(req, timeout=10) as r:
             raw = r.read(50_000).decode("utf-8", errors="replace")
 
         import re

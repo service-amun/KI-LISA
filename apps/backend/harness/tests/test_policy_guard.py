@@ -210,6 +210,62 @@ class TestURLSafety:
         assert not r.allowed
 
 
+# ── SSRF: Redirect-Following-Schutz ──────────────────────────────────────────
+
+class TestSSRFRedirectProtection:
+    """
+    Belegt dass _SSRFSafeRedirectHandler in agent_runtime.run_fetch()
+    Weiterleitungen auf interne Adressen blockiert.
+    """
+
+    def test_redirect_to_private_ip_blocked(self):
+        """HTTP 302 auf 192.168.x muss blockiert werden — nicht gefolgt werden."""
+        import urllib.error
+        from unittest.mock import patch, MagicMock
+        from agent_runtime import run_fetch
+
+        # Simuliere einen 302-Redirect auf eine private Adresse
+        class _FakeRedirect(Exception):
+            pass
+
+        def _mock_open(req, timeout=None):
+            raise urllib.error.HTTPError(
+                "http://192.168.1.1/secret", 302,
+                "Found",
+                {"Location": "http://192.168.1.1/secret"},
+                None,
+            )
+
+        # Direkt testen: _SSRFSafeRedirectHandler.redirect_request blockiert
+        from agent_runtime import _SSRFSafeRedirectHandler
+        handler = _SSRFSafeRedirectHandler()
+        import urllib.request
+        req = urllib.request.Request("http://public-server.example.com/resource")
+        with pytest.raises(urllib.error.HTTPError) as exc_info:
+            handler.redirect_request(req, None, 302, "Found", {}, "http://192.168.1.1/secret")
+        assert exc_info.value.code == 403
+
+    def test_redirect_to_metadata_ip_blocked(self):
+        """Redirect auf AWS/GCP Metadata Service muss blockiert werden."""
+        from agent_runtime import _SSRFSafeRedirectHandler
+        import urllib.request, urllib.error
+        handler = _SSRFSafeRedirectHandler()
+        req = urllib.request.Request("http://public.example.com/")
+        with pytest.raises(urllib.error.HTTPError) as exc_info:
+            handler.redirect_request(req, None, 301, "Moved", {}, "http://169.254.169.254/latest/")
+        assert exc_info.value.code == 403
+
+    def test_redirect_to_public_url_allowed(self):
+        """Redirect auf öffentliche URL darf weitergefolgt werden."""
+        from agent_runtime import _SSRFSafeRedirectHandler
+        import urllib.request
+        handler = _SSRFSafeRedirectHandler()
+        req = urllib.request.Request("http://example.com/")
+        # Kein Error — redirect_request gibt ein neues Request-Objekt zurück
+        result = handler.redirect_request(req, None, 301, "Moved", {}, "https://example.com/new-path")
+        assert result is not None
+
+
 # ── PII-Tokenisierung ─────────────────────────────────────────────────────────
 
 class TestPIIHandling:

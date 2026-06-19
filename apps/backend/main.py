@@ -37,6 +37,18 @@ if _company == "Ihr Unternehmen" or _dsb_email == "datenschutz@ihr-unternehmen.d
     print("[AILIZA] HINWEIS: AILIZA_COMPANY_NAME und/oder AILIZA_DSB_EMAIL sind noch Platzhalter.", flush=True)
     print("[AILIZA] Bitte in apps/backend/.env mit echten Firmendaten befüllen (DSGVO Art. 13 / DDG §5).", flush=True)
 
+# Fail-closed Status anzeigen — wichtig für Upgrades von älteren Versionen
+_llm_env = os.getenv("AILIZA_EXTERNAL_LLM_ENABLED", "")
+if not _llm_env or _llm_env.lower().strip() not in {"true", "1", "yes", "on"}:
+    print("[AILIZA] KI-CHAT DEAKTIVIERT: AILIZA_EXTERNAL_LLM_ENABLED ist nicht gesetzt oder 'false'.", flush=True)
+    print("[AILIZA] Setze AILIZA_EXTERNAL_LLM_ENABLED=true in apps/backend/.env um den KI-Chat zu aktivieren.", flush=True)
+else:
+    print("[AILIZA] KI-Chat aktiviert (AILIZA_EXTERNAL_LLM_ENABLED=true).", flush=True)
+
+_mem_env = os.getenv("AILIZA_MEMORY_ENABLED", "")
+if _mem_env and _mem_env.lower().strip() in {"true", "1", "yes", "on"}:
+    print("[AILIZA] Langzeitspeicher aktiviert (AILIZA_MEMORY_ENABLED=true).", flush=True)
+
 # Eigene Module (sys.path damit relative Imports funktionieren)
 sys.path.insert(0, str(Path(__file__).parent))
 
