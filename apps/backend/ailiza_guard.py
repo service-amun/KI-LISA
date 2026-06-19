@@ -52,6 +52,8 @@ class PolicyResult:
     token_map: dict = field(default_factory=dict)
     warnings: list = field(default_factory=list)
     is_credential_block: bool = False  # Sparse-Audit: kein Inhalt loggen
+    pii_found: list = field(default_factory=list)          # PII-Typen (für Audit-Log)
+    requires_human_oversight: bool = False                  # EU AI Act Art. 14
 
 
 # ── Interne Hilfsfunktionen ───────────────────────────────────────────────────
@@ -270,4 +272,6 @@ def enforce_policy(
         sanitized_text=guardrail.sanitized_text,
         token_map=guardrail.token_map,
         warnings=warnings,
+        pii_found=guardrail.pii_found,
+        requires_human_oversight=guardrail.requires_human_oversight,
     )

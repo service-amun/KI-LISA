@@ -45,7 +45,8 @@ import groq_client
 import agent_runtime
 import session_manager
 from audit.audit_logger import write_audit_entry, get_audit_entries
-from skills.guardrail_skill import check_input, restore_tokens
+from ailiza_guard import enforce_policy
+from skills.guardrail_skill import restore_tokens
 from skills.router_skill import classify as route_query
 from skills.reflection_skill import kontext_aufbauen, auto_extrahieren
 from compliance.weekly_checker import bericht as compliance_bericht, komplett_check
@@ -339,33 +340,42 @@ def chat_in_session(session_id: str, body: ChatRequest, request: Request):
     if not session_manager.get_session(session_id):
         raise HTTPException(status_code=404, detail="Chat nicht gefunden.")
 
-    # ── Schritt 1: Guardrail — PII tokenisieren ───────────────────────────
-    # Bestehendes Token-Mapping der Session übergeben (Konsistenz über Nachrichten)
+    # ── Schritt 1: Policy-Gate — Kill-Switch, Credentials, PII, Datenklassen ─
     bestehendes_mapping = _pii_zwischenspeicher.get(session_id, {})
-    guard = check_input(body.message, existing_token_map=bestehendes_mapping)
+    policy = enforce_policy(
+        body.message,
+        action="call_external_model",
+        session_id=session_id,
+        existing_token_map=bestehendes_mapping,
+    )
 
-    if guard.blocked:
+    if not policy.allowed:
+        if policy.is_credential_block:
+            write_audit_entry("session.credential_blocked", {
+                "session_id": session_id[:8] + "...",
+                "content_stored": False,
+            })
         return {
-            "text": guard.block_reason,
-            "warnings": [],
+            "text": policy.message,
+            "warnings": policy.warnings,
             "blocked": True,
             "compliance": {},
         }
 
     # ── Schritt 2: Neues Mapping im Zwischenspeicher ablegen ─────────────
-    if guard.token_map:
-        _pii_zwischenspeicher[session_id] = guard.token_map
+    if policy.token_map:
+        _pii_zwischenspeicher[session_id] = policy.token_map
 
     # Tokenisierter Text geht an LLM — Original bleibt im RAM (nie in SQLite)
-    llm_text  = guard.sanitized_text or body.message   # Token-Version für LLM + Speicherung
-    user_text = body.message                            # Original nur für Anzeige im Frontend
+    llm_text  = policy.sanitized_text or body.message   # Token-Version für LLM + Speicherung
+    user_text = body.message                             # Original nur für Anzeige im Frontend
 
     # ── Schritt 3: Tokenisierte Nachricht speichern (DSGVO Art. 25 — kein PII auf Disk) ──
-    session_manager.add_message(session_id, "user", llm_text, warnings=guard.warnings)
+    session_manager.add_message(session_id, "user", llm_text, warnings=policy.warnings)
 
     # ── Human Oversight VOR LLM-Aufruf anlegen (EU AI Act Art. 14) ───────
     session_vor_llm = session_manager.get_session(session_id)
-    if session_vor_llm and session_vor_llm.requires_human_oversight:
+    if session_vor_llm and (session_vor_llm.requires_human_oversight or policy.requires_human_oversight):
         database.create_approval(
             run_id=0,
             task=llm_text[:200],   # Tokenisiert — kein PII
@@ -376,8 +386,8 @@ def chat_in_session(session_id: str, body: ChatRequest, request: Request):
     route = route_query(llm_text)          # Modell, Token-Budget, Temperatur
     system_prompt = session_manager.get_system_prompt(session_id, llm_text)
     if body.eigene_anweisungen:
-        guard_anw = check_input(body.eigene_anweisungen)
-        anw_text = guard_anw.sanitized_text or body.eigene_anweisungen
+        pol_anw = enforce_policy(body.eigene_anweisungen, action="call_external_model", session_id=session_id)
+        anw_text = pol_anw.sanitized_text or body.eigene_anweisungen
         system_prompt = anw_text.strip() + "\n\n" + system_prompt
 
     # Relevante Erinnerungen aus früheren Gesprächen anhängen
@@ -392,7 +402,7 @@ def chat_in_session(session_id: str, body: ChatRequest, request: Request):
     kontext_sauber = [
         {
             "role": m["role"],
-            "content": _tokenisiere_kontext(m["content"], guard.token_map),
+            "content": _tokenisiere_kontext(m["content"], policy.token_map),
         }
         for m in kontext_roh[:-1]  # aktuelle Nachricht bereits als `message` übergeben
     ]
@@ -423,7 +433,9 @@ def chat_in_session(session_id: str, body: ChatRequest, request: Request):
         "model": response.model,
         "tokens": response.tokens_used,
         "ip": request.client.host if request.client else None,
-        "pii_typen": guard.pii_found,           # Nur Typ (E-Mail, Telefon...), kein Wert
+        "pii_typen": policy.pii_found,           # Nur Typ (E-Mail, Telefon...), kein Wert
+        "policy_decision": policy.decision,
+        "data_classes": policy.policy.get("data_classes", []),
         "pii_tokens_gesamt": len(aktuelles_mapping),
         "human_oversight": session.requires_human_oversight if session else False,
     })
@@ -433,12 +445,12 @@ def chat_in_session(session_id: str, body: ChatRequest, request: Request):
         "platzhalter": {k: k for k in aktuelles_mapping},  # nur Token-Keys, keine Originalwerte
         "model": response.model,
         "tokens_used": response.tokens_used,
-        "warnings": guard.warnings,
+        "warnings": policy.warnings,
         "blocked": False,
         "compliance": {
             "risk_level": session.risk_level if session else "low",
             "requires_human_oversight": session.requires_human_oversight if session else False,
-            "warnings": guard.warnings,
+            "warnings": policy.warnings,
         },
         "is_ai": True,
         "disclaimer": "KI-generiert — AILIZA (EU AI Act Art. 52)",
@@ -484,25 +496,16 @@ def _tokenisiere_kontext(text: str, token_map: dict) -> str:
 def agent_run(body: AgentRunRequest, request: Request):
     check_rate_limit(request)
 
-    guard = check_input(body.task)
-    if guard.blocked:
-        return {"status": "blocked", "message": guard.block_reason, "results": []}
+    task_lower = body.task.lower()
+    action = "run_fetch" if (task_lower.startswith("http://") or task_lower.startswith("https://")) else "run_search"
+    pol = enforce_policy(body.task, action=action)
+
+    if not pol.allowed:
+        return {"status": "blocked", "message": pol.message, "results": []}
 
     run_id = database.create_run(body.task)
-    # Gateway: Guardrails + Audit für jeden Tool-Aufruf
-    task_lower = body.task.lower()
-    if task_lower.startswith("http://") or task_lower.startswith("https://"):
-        from urllib.parse import urlparse
-        parsed = urlparse(body.task)
-        if parsed.scheme not in ("https",):
-            return {"status": "blocked", "message": "Nur HTTPS-URLs erlaubt.", "results": []}
-        host = parsed.hostname or ""
-        blocked_prefixes = ("127.", "10.", "192.168.", "169.254.", "::1", "localhost")
-        if any(host.startswith(p) for p in blocked_prefixes):
-            return {"status": "blocked", "message": "Interne Adressen nicht erlaubt.", "results": []}
-        results = [tool_gateway.ausfuehren("abruf", body.task)]
-    else:
-        results = [tool_gateway.ausfuehren("suche", body.task)]
+    bereinigt = pol.sanitized_text or body.task
+    results = [tool_gateway.ausfuehren("abruf" if action == "run_fetch" else "suche", bereinigt)]
 
     all_success = all(r.success for r in results)
     database.finish_run(
@@ -515,6 +518,7 @@ def agent_run(body: AgentRunRequest, request: Request):
         "run_id": run_id,
         "task_len": len(body.task),
         "tools_used": [r.tool for r in results],
+        "policy_decision": pol.decision,
         "ip": request.client.host if request.client else None,
     })
 
@@ -522,7 +526,7 @@ def agent_run(body: AgentRunRequest, request: Request):
         "run_id": run_id,
         "status": "completed" if all_success else "partial",
         "results": [{"tool": r.tool, "success": r.success, "summary": r.summary, "error": r.error} for r in results],
-        "warnings": guard.warnings,
+        "warnings": pol.warnings,
     }
 
 
