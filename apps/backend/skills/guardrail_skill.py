@@ -22,7 +22,7 @@ from typing import Optional
 
 PII_PATTERNS = {
     "E-Mail-Adresse":    r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b",
-    "Telefonnummer":     r"\b(?:\+49|0049|0)[1-9][\d/\-]{4,14}\b",
+    "Telefonnummer":     r"(?<!\w)(?:\+49[\s]?|0049[\s]?|0)[1-9][\d\s/\-]{4,14}(?!\d)",
     "Kontoverbindung":   r"\bDE\d{2}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{2}\b",
     "Geburtsdatum":      r"\b\d{1,2}[./]\d{1,2}[./]\d{2,4}\b",
     "IP-Adresse":        r"\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b",

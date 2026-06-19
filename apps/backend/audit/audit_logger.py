@@ -5,9 +5,11 @@ Protokolliert alle KI-Aktionen — ohne personenbezogene Klardaten.
 """
 
 import hashlib
+import hmac
 import json
 import os
 import sqlite3
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -34,9 +36,19 @@ def _get_conn():
     return conn
 
 
+def _ip_hash(ip: str) -> str:
+    # HMAC-SHA256 mit Server-Secret + täglich rotierendem Salt
+    # Tägliche Rotation: gleiche IP am selben Tag → gleicher Hash (für Korrelation),
+    # nach Mitternacht UTC → anderer Hash (verhindert langfristige Profilbildung)
+    secret = os.getenv("AILIZA_IP_HASH_SECRET", "ailiza-changeme-in-prod").encode()
+    daily_salt = str(int(time.time()) // 86400).encode()
+    key = secret + b":" + daily_salt
+    return hmac.new(key, ip.encode(), hashlib.sha256).hexdigest()[:16]
+
+
 def write_audit_entry(action: str, details: dict):
     ip = details.pop("ip", None)
-    ip_hash = hashlib.sha256(ip.encode()).hexdigest()[:12] if ip else None
+    ip_hash = _ip_hash(ip) if ip else None
 
     with _get_conn() as conn:
         conn.execute("""

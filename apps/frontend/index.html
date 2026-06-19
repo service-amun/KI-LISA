@@ -997,6 +997,7 @@ body {
       </div>
       <div class="nav-item" id="nav-status" onclick="zeigSeite('status', this)">
         <span class="n-ico">🛡️</span> Datenschutz & Status
+        <span id="freigaben-badge" style="display:none;background:#e53e3e;color:#fff;border-radius:10px;padding:1px 6px;font-size:11px;font-weight:bold;margin-left:4px"></span>
       </div>
     </div>
 
@@ -1650,7 +1651,13 @@ async function nachrichtSenden() {
       const d = await r.json();
 
       const pmap = d.platzhalter || {};
-      if (d.blocked) {
+      if (d.approval_pending) {
+        nachrichtAnzeigen('ki', d.text, d.warnings || [], 'orange', pmap);
+        // Badge sofort aktualisieren ohne auf nächsten Status-Refresh zu warten
+        const badge = document.getElementById('freigaben-badge');
+        if (badge) { badge.textContent = parseInt(badge.textContent || '0') + 1; badge.style.display = 'inline-block'; }
+        chatListeLaden();
+      } else if (d.blocked) {
         nachrichtAnzeigen('ki', d.text, [], 'rot', pmap);
         complianceAktualisieren({ risk_level: 'blocked' });
         eingabeSperren('rot');
@@ -2155,6 +2162,13 @@ async function statusLaden() {
 
     document.getElementById('k-runs').textContent  = runs.length;
     document.getElementById('k-freig').textContent = apprs.length;
+
+    // Badge im Navigations-Tab
+    const badge = document.getElementById('freigaben-badge');
+    if (badge) {
+      badge.textContent = apprs.length;
+      badge.style.display = apprs.length > 0 ? 'inline-block' : 'none';
+    }
 
     // Freigaben
     document.getElementById('freigaben-liste').innerHTML = !apprs.length

@@ -150,10 +150,14 @@ class TestPIIHandling:
         assert r.decision == "block"
         assert "Kontoverbindung" in r.pii_found  # erkannt, aber blockiert
 
-    def test_phone_tokenized(self):
-        # Regex trifft DE-Ortsnetz-Format mit Wortgrenze: 030/12345678
-        # +49-Präfix schlägt fehl weil \b vor + nicht matcht (bekanntes Regex-Limit)
+    def test_phone_ortsnetz_tokenized(self):
         r = enforce_policy("Telefon: 030/12345678", action="call_external_model")
+        assert r.allowed
+        assert "Telefonnummer" in r.pii_found
+
+    def test_phone_international_tokenized(self):
+        # +49 mit Leerzeichen — nach Regex-Fix jetzt erkannt
+        r = enforce_policy("Telefon: +49 30 12345678", action="call_external_model")
         assert r.allowed
         assert "Telefonnummer" in r.pii_found
 
