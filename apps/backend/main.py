@@ -529,7 +529,8 @@ def agent_run(body: AgentRunRequest, request: Request):
     check_rate_limit(request)
 
     task_lower = body.task.lower()
-    action = "run_fetch" if (task_lower.startswith("http://") or task_lower.startswith("https://")) else "run_search"
+    _fetch_schemes = ("http://", "https://", "file://", "ftp://", "ftps://")
+    action = "run_fetch" if any(task_lower.startswith(s) for s in _fetch_schemes) else "run_search"
     pol = enforce_policy(body.task, action=action)
 
     if not pol.allowed:
