@@ -1,0 +1,112 @@
+{
+  "version": "1.0.0",
+  "updated": "2026-06-19",
+  "actions": {
+    "call_external_model": {
+      "description": "Aufruf eines externen KI-Modells (z.B. Groq)",
+      "kill_switch_env": "AILIZA_EXTERNAL_LLM_ENABLED",
+      "data_class_rules": {
+        "0": "allow",
+        "1": "allow",
+        "2": "allow_with_notice",
+        "3": "allow_with_notice",
+        "4": "block",
+        "5": "block",
+        "6": "block",
+        "7": "block",
+        "8": "block",
+        "9": "block",
+        "10": "block"
+      },
+      "default": "allow"
+    },
+    "run_search": {
+      "description": "Externe Web-Suche via Tavily",
+      "kill_switch_env": "AILIZA_EXTERNAL_LLM_ENABLED",
+      "data_class_rules": {
+        "0": "allow",
+        "1": "allow",
+        "2": "allow_with_notice",
+        "3": "allow_with_notice",
+        "4": "block",
+        "5": "block",
+        "6": "block",
+        "7": "block",
+        "8": "block",
+        "9": "allow_with_notice",
+        "10": "block"
+      },
+      "default": "allow"
+    },
+    "run_fetch": {
+      "description": "URL-Abruf einer öffentlichen Webseite",
+      "allowed_schemes": ["http", "https"],
+      "block_private_ips": true,
+      "data_class_rules": {
+        "5": "block"
+      },
+      "default": "allow"
+    },
+    "save_memory": {
+      "description": "Fakt in den Langzeitspeicher schreiben",
+      "require_opt_in_env": "AILIZA_MEMORY_ENABLED",
+      "data_class_rules": {
+        "0": "allow",
+        "1": "allow",
+        "2": "allow_with_notice",
+        "3": "require_approval",
+        "4": "block",
+        "5": "block",
+        "6": "block",
+        "7": "block",
+        "8": "block",
+        "9": "allow_with_notice",
+        "10": "block"
+      },
+      "default": "allow"
+    },
+    "write_system": {
+      "description": "Schreiben in externe Systeme (Notion, CRM, E-Mail, Datei)",
+      "data_class_rules": {
+        "3": "require_approval",
+        "4": "block",
+        "5": "block",
+        "6": "require_approval",
+        "7": "require_approval",
+        "8": "require_approval",
+        "10": "block"
+      },
+      "default": "require_approval"
+    }
+  },
+  "credential_patterns": [
+    "gsk_[A-Za-z0-9]{20,}",
+    "sk-ant-[A-Za-z0-9\\-]{20,}",
+    "tvly-[A-Za-z0-9]{20,}",
+    "(?i)password\\s*[=:]\\s*\\S+",
+    "(?i)api[_\\-]?key\\s*[=:]\\s*\\S+",
+    "(?i)\\btoken\\s*[=:]\\s*\\S+"
+  ],
+  "private_ip_ranges": [
+    "10.0.0.0/8",
+    "172.16.0.0/12",
+    "192.168.0.0/16",
+    "127.0.0.0/8",
+    "169.254.0.0/16",
+    "0.0.0.0/8",
+    "100.64.0.0/10",
+    "::1/128",
+    "fc00::/7"
+  ],
+  "messages": {
+    "kill_switch_off": "Externe KI ist deaktiviert. AILIZA arbeitet lokal weiter.",
+    "memory_disabled": "Langzeitspeicher ist für diesen Mandanten nicht aktiviert.",
+    "blocked_credential": "Zugangsdaten erkannt. Anfrage wird aus Sicherheitsgründen nicht verarbeitet.",
+    "blocked_special_category": "Besonders schützenswerte Daten (DSGVO Art. 9) dürfen nicht extern verarbeitet werden.",
+    "blocked_url_scheme": "Dieses URL-Schema ist nicht erlaubt. Nur http und https werden unterstützt.",
+    "blocked_private_url": "Interne Adressen können nicht abgerufen werden. Bitte eine öffentliche URL eingeben.",
+    "allow_with_notice_pii": "Personenbezogene Daten werden vor der externen Verarbeitung anonymisiert.",
+    "require_approval_write": "Für diesen Schreibvorgang ist eine Freigabe erforderlich.",
+    "require_approval_memory": "Für die Speicherung dieser Information ist eine Admin-Freigabe erforderlich."
+  }
+}

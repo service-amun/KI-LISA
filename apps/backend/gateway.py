@@ -1,45 +1,61 @@
 # © 2026 Karola Fromm-Nasreldin | AILIZA — Alle Rechte vorbehalten
 """
 AILIZA — Gateway
-Sichere Tool-Ausführung mit Guardrail-Prüfung und Audit-Logging.
+Sichere Tool-Ausführung mit Policy-Gate und Audit-Logging.
 Einheitlicher Einstiegspunkt für alle Tool-Aufrufe.
 """
 
 from audit.audit_logger import write_audit_entry
 from agent_runtime import run_search, run_fetch, ToolResult
-from skills.guardrail_skill import check_input
+from ailiza_guard import enforce_policy
 
 
 def ausfuehren(tool: str, eingabe: str, session_id: str = "system") -> ToolResult:
     """
-    Führt ein Tool aus — mit Guardrail davor und Audit danach.
+    Führt ein Tool aus — mit Policy-Gate davor und Audit danach.
 
-    tool:     "suche" | "abruf"
-    eingabe:  Suchbegriff oder URL
+    tool:    "suche" | "abruf"
+    eingabe: Suchbegriff oder URL
     """
-    guard = check_input(eingabe)
+    action = "run_search" if tool == "suche" else "run_fetch"
+    policy = enforce_policy(eingabe, action=action, session_id=session_id)
 
-    if guard.blocked:
-        write_audit_entry("gateway.blocked", {
-            "tool": tool,
-            "session_id": session_id[:8] + "...",
-            "grund": guard.block_reason[:100],
-        })
-        return ToolResult(tool=tool, success=False, error=guard.block_reason)
+    if not policy.allowed:
+        # Credentials bekommen sparses Audit-Event — kein Inhalt
+        if policy.is_credential_block:
+            write_audit_entry("gateway.credential_blocked", {
+                "tool": tool,
+                "session_id": session_id[:8] + "...",
+                "action": action,
+                "content_stored": False,
+            })
+        else:
+            write_audit_entry("gateway.blocked", {
+                "tool": tool,
+                "session_id": session_id[:8] + "...",
+                "decision": policy.decision,
+                "data_classes": policy.policy.get("data_classes", []),
+                "rule": policy.policy.get("triggered_rules", []),
+            })
+        return ToolResult(tool=tool, success=False, error=policy.message)
 
-    bereinigt = guard.sanitized_text or eingabe
+    # PII-bereinigten Text verwenden (falls Anonymisierung nötig)
+    bereinigt = policy.sanitized_text or eingabe
 
     if tool == "suche":
         result = run_search(bereinigt)
     elif tool == "abruf":
-        result = run_fetch(eingabe)   # URL nicht tokenisieren
+        # Originale URL übergeben — URL-Sicherheit wurde bereits in enforce_policy geprüft
+        result = run_fetch(eingabe)
     else:
         return ToolResult(tool=tool, success=False, error=f"Unbekanntes Tool: {tool}")
 
     write_audit_entry(f"gateway.{tool}", {
         "session_id": session_id[:8] + "...",
         "success": result.success,
-        "pii_bereinigt": bool(guard.pii_found),
+        "decision": policy.decision,
+        "pii_bereinigt": bool(policy.token_map),
+        "data_classes": policy.policy.get("data_classes", []),
         "error": (result.error or "")[:80] if not result.success else None,
     })
 
