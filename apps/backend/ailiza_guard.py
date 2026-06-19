@@ -11,16 +11,18 @@ Entscheidungen:
 
 Aufrufreihenfolge (fail-closed):
   1. Credential-Erkennung (Stufe 5 — sofort blockieren, kein Audit-Inhalt)
-  2. Kill-Switch (AILIZA_EXTERNAL_LLM_ENABLED)
-  3. URL-Sicherheit (nur für run_fetch)
-  4. Guardrail-Prüfung (PII, verbotene Praktiken, Hochrisiko)
-  5. Datenklassen-Regelwerk aus policy_rules.json
+  2. Kill-Switch (AILIZA_EXTERNAL_LLM_ENABLED) — default: false
+  3. Opt-in-Check (AILIZA_MEMORY_ENABLED) — default: false
+  4. URL-Sicherheit (nur für run_fetch) — inkl. DNS-Auflösung
+  5. Guardrail-Prüfung (PII, verbotene Praktiken, Hochrisiko)
+  6. Datenklassen-Regelwerk aus policy_rules.json
 """
 
 import ipaddress
 import json
 import os
 import re
+import socket
 import urllib.parse
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -28,16 +30,16 @@ from typing import Optional
 
 from skills.guardrail_skill import check_input, GuardrailResult
 
-# policy_rules.json liegt im selben Verzeichnis wie ailiza_guard.py
 _RULES_PATH = Path(__file__).parent / "policy_rules.json"
 
-# Einmalig laden — kein Reload im laufenden Betrieb (Neustart nötig für Regeländerungen)
+
 def _load_rules() -> dict:
     try:
         with open(_RULES_PATH, encoding="utf-8") as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return {"actions": {}, "credential_patterns": [], "messages": {}}
+
 
 _RULES: dict = _load_rules()
 
@@ -52,8 +54,8 @@ class PolicyResult:
     token_map: dict = field(default_factory=dict)
     warnings: list = field(default_factory=list)
     is_credential_block: bool = False  # Sparse-Audit: kein Inhalt loggen
-    pii_found: list = field(default_factory=list)          # PII-Typen (für Audit-Log)
-    requires_human_oversight: bool = False                  # EU AI Act Art. 14
+    pii_found: list = field(default_factory=list)
+    requires_human_oversight: bool = False
 
 
 # ── Interne Hilfsfunktionen ───────────────────────────────────────────────────
@@ -68,14 +70,14 @@ def _detect_credentials(text: str) -> bool:
 
 def _classify_pii_to_data_class(guardrail: GuardrailResult) -> list[int]:
     """
-    Mappt erkannte PII-Typen auf Datenklassen (0-10) aus dem Workflow.
-    Gibt alle zutreffenden Klassen zurück — strengste Regel gewinnt im Aufrufer.
+    Mappt erkannte PII-Typen auf Datenklassen (0-10).
+    Strengste Regel gewinnt im Aufrufer.
     """
     classes = set()
     pii_class_map = {
-        "E-Mail-Adresse": 3,    # Personal Data
+        "E-Mail-Adresse": 3,
         "Telefonnummer": 3,
-        "Kontoverbindung": 6,   # Financial
+        "Kontoverbindung": 6,
         "Geburtsdatum": 3,
         "IP-Adresse": 3,
         "Sozialversicherung": 3,
@@ -84,7 +86,7 @@ def _classify_pii_to_data_class(guardrail: GuardrailResult) -> list[int]:
         cls = pii_class_map.get(pii_typ, 3)
         classes.add(cls)
     if guardrail.requires_human_oversight:
-        classes.add(3)  # mindestens Personal Data bei Hochrisiko
+        classes.add(3)
     return sorted(classes)
 
 
@@ -98,9 +100,58 @@ def _strictest_decision(decisions: list[str]) -> str:
     return result
 
 
+def _build_private_ranges() -> list[ipaddress.IPv4Network | ipaddress.IPv6Network]:
+    """Baut die Liste privater IP-Ranges aus der Konfiguration."""
+    ranges = []
+    for r in _RULES.get("private_ip_ranges", [
+        "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16",
+        "127.0.0.0/8", "169.254.0.0/16", "0.0.0.0/8", "100.64.0.0/10",
+        "::1/128", "fc00::/7", "fe80::/10",
+    ]):
+        try:
+            ranges.append(ipaddress.ip_network(r, strict=False))
+        except ValueError:
+            pass
+    return ranges
+
+
+_PRIVATE_RANGES: list = _build_private_ranges()
+
+
+def _ip_is_private(ip_str: str) -> bool:
+    """Prüft ob eine IP-Adresse privat/intern ist."""
+    try:
+        ip = ipaddress.ip_address(ip_str)
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast:
+            return True
+        for rng in _PRIVATE_RANGES:
+            if ip in rng:
+                return True
+    except ValueError:
+        pass
+    return False
+
+
+def _resolve_hostname(hostname: str, timeout: float = 2.0) -> list[str]:
+    """
+    DNS-Auflösung mit Timeout.
+    Gibt [] zurück bei Fehler — fail-open: kein Block bei DNS-Ausfall.
+    """
+    old_timeout = socket.getdefaulttimeout()
+    try:
+        socket.setdefaulttimeout(timeout)
+        infos = socket.getaddrinfo(hostname, None)
+        return list({info[4][0] for info in infos})
+    except (socket.gaierror, OSError):
+        return []
+    finally:
+        socket.setdefaulttimeout(old_timeout)
+
+
 def _check_url_safety(url: str) -> tuple[bool, str]:
     """
     SSRF-Schutz: blockiert private IPs, interne Adressen, unsichere Schemes.
+    Prüft zusätzlich per DNS-Auflösung gegen DNS-Rebinding-Angriffe.
     Gibt (safe, reason) zurück.
     """
     msgs = _RULES.get("messages", {})
@@ -117,26 +168,25 @@ def _check_url_safety(url: str) -> tuple[bool, str]:
     if not hostname:
         return False, "Kein Hostname in der URL."
 
-    # Explizit blockierte Hostnamen
-    if hostname.lower() in {"localhost", "127.0.0.1", "0.0.0.0", "::1"}:
+    # Explizit blockierte Hostnamen (Konfiguration + Hardcode)
+    blocked_hosts = set(
+        h.lower() for h in _RULES.get("blocked_hostnames", [])
+    ) | {"localhost", "0.0.0.0"}
+    if hostname.lower() in blocked_hosts:
         return False, msgs.get("blocked_private_url", "Interne Adressen nicht erlaubt.")
 
-    # Private IP-Ranges prüfen
-    private_ranges = [
-        ipaddress.ip_network(r)
-        for r in _RULES.get("private_ip_ranges", [
-            "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16",
-            "127.0.0.0/8", "169.254.0.0/16", "0.0.0.0/8", "100.64.0.0/10",
-        ])
-        if ":" not in r  # IPv4 only für urlparse-Hostname
-    ]
+    # IP-Literal direkt prüfen
     try:
-        ip = ipaddress.ip_address(hostname)
-        for rng in private_ranges:
-            if ip in rng:
-                return False, msgs.get("blocked_private_url", "Interne Adressen nicht erlaubt.")
+        if _ip_is_private(hostname):
+            return False, msgs.get("blocked_private_url", "Interne Adressen nicht erlaubt.")
     except ValueError:
-        pass  # Hostname ist kein IP-Literal — OK
+        pass  # kein IP-Literal
+
+    # DNS-Auflösung: Hostnamen auf private IPs prüfen (DNS-Rebinding-Schutz)
+    resolved = _resolve_hostname(hostname)
+    for ip_str in resolved:
+        if _ip_is_private(ip_str):
+            return False, msgs.get("blocked_dns_rebind", "Diese Adresse löst auf eine interne IP auf.")
 
     return True, ""
 
@@ -163,20 +213,21 @@ def enforce_policy(
     msgs = _RULES.get("messages", {})
     action_rules = _RULES.get("actions", {}).get(action, {})
 
-    # ── 1. Credential-Erkennung (Stufe 5) — vor allem anderen ────────────────
+    # ── 1. Credential-Erkennung — vor allem anderen ───────────────────────────
     if _detect_credentials(text):
         return PolicyResult(
             decision="block",
             allowed=False,
             message=msgs.get("blocked_credential", "Zugangsdaten erkannt — blockiert."),
             policy={"rule": "credential_detection", "action": action},
-            is_credential_block=True,  # Sparse-Audit: Inhalt wird NICHT geloggt
+            is_credential_block=True,
         )
 
-    # ── 2. Kill-Switch ────────────────────────────────────────────────────────
+    # ── 2. Kill-Switch (fail-closed: fehlt oder ungültig → blockieren) ────────
     kill_switch_env = action_rules.get("kill_switch_env")
     if kill_switch_env:
-        enabled = os.getenv(kill_switch_env, "true").lower() in {"true", "1", "yes"}
+        raw = os.getenv(kill_switch_env)
+        enabled = raw is not None and raw.lower().strip() in {"true", "1", "yes", "on"}
         if not enabled:
             return PolicyResult(
                 decision="block",
@@ -185,10 +236,11 @@ def enforce_policy(
                 policy={"rule": "kill_switch", "env": kill_switch_env, "action": action},
             )
 
-    # ── 3. Opt-in-Check (z.B. Memory) ────────────────────────────────────────
+    # ── 3. Opt-in-Check (fail-closed: fehlt oder ungültig → blockieren) ──────
     opt_in_env = action_rules.get("require_opt_in_env")
     if opt_in_env:
-        opt_in = os.getenv(opt_in_env, "false").lower() in {"true", "1", "yes"}
+        raw = os.getenv(opt_in_env)
+        opt_in = raw is not None and raw.lower().strip() in {"true", "1", "yes", "on"}
         if not opt_in:
             return PolicyResult(
                 decision="block",

@@ -48,6 +48,46 @@ class TestCredentialDetection:
         r = enforce_policy("Der API-Endpunkt lautet /api/v1/chat", action="call_external_model")
         assert r.allowed
 
+    def test_github_pat_blocked(self):
+        # Konstruiert — kein echter Token im Quelltext (GitHub Secret Scanning)
+        r = enforce_policy("ghp_" + "A" * 36, action="call_external_model")
+        assert not r.allowed
+        assert r.is_credential_block
+
+    def test_slack_bot_token_blocked(self):
+        # xoxb-<digits>-<alphanum> — Slack-Bot-Token-Format, konstruiert
+        fake = "xoxb-" + "0" * 12 + "-" + "T" * 16
+        r = enforce_policy(fake, action="call_external_model")
+        assert not r.allowed
+        assert r.is_credential_block
+
+    def test_jwt_token_blocked(self):
+        # eyJ<header>.<payload>.<signature> — konstruiert, kein echter JWT
+        header = "eyJhbGciOiJIUzI1NiJ9"   # base64url({"alg":"HS256"})
+        payload = "eyJzdWIiOiJ0ZXN0In0"    # base64url({"sub":"test"})
+        sig = "T" * 40                       # Fake-Signatur, kein gültiger HMAC
+        fake_jwt = f"{header}.{payload}.{sig}"
+        r = enforce_policy(f"Authorization: {fake_jwt}", action="call_external_model")
+        assert not r.allowed
+        assert r.is_credential_block
+
+    def test_bearer_token_blocked(self):
+        # Bearer-Header mit langem Fake-Token, konstruiert
+        fake_token = "eyJmYWtlIjoidG9rZW4ifQ." + "X" * 30 + "." + "Y" * 20
+        r = enforce_policy(f"Bearer {fake_token}", action="call_external_model")
+        assert not r.allowed
+        assert r.is_credential_block
+
+    def test_secret_assignment_blocked(self):
+        r = enforce_policy("secret=mein_geheimes_passwort_123", action="call_external_model")
+        assert not r.allowed
+        assert r.is_credential_block
+
+    def test_generic_sk_key_blocked(self):
+        r = enforce_policy("Mein Key: sk-proj-" + "x" * 30, action="call_external_model")
+        assert not r.allowed
+        assert r.is_credential_block
+
 
 # ── Kill-Switch ───────────────────────────────────────────────────────────────
 
@@ -80,6 +120,25 @@ class TestKillSwitch:
         monkeypatch.setenv("AILIZA_EXTERNAL_LLM_ENABLED", "false")
         r = enforce_policy("https://www.bundesregierung.de/", action="run_fetch")
         assert r.allowed
+
+    def test_kill_switch_missing_env_blocks_fail_closed(self, monkeypatch):
+        # Fail-closed: fehlt die ENV-Variable, muss blockiert werden
+        monkeypatch.delenv("AILIZA_EXTERNAL_LLM_ENABLED", raising=False)
+        r = enforce_policy("Hallo", action="call_external_model")
+        assert not r.allowed
+        assert r.decision == "block"
+
+    def test_kill_switch_empty_string_blocks(self, monkeypatch):
+        monkeypatch.setenv("AILIZA_EXTERNAL_LLM_ENABLED", "")
+        r = enforce_policy("Hallo", action="call_external_model")
+        assert not r.allowed
+
+    def test_memory_missing_env_blocks_fail_closed(self, monkeypatch):
+        # Fail-closed: fehlt AILIZA_MEMORY_ENABLED, muss blockiert werden
+        monkeypatch.delenv("AILIZA_MEMORY_ENABLED", raising=False)
+        r = enforce_policy("Merke dir: Produkt X", action="save_memory")
+        assert not r.allowed
+        assert r.decision == "block"
 
 
 # ── URL-Sicherheit / SSRF-Schutz ─────────────────────────────────────────────
@@ -126,6 +185,29 @@ class TestURLSafety:
         # run_search bekommt einen Suchbegriff, keine URL — darf nicht URL-geprüft werden
         r = enforce_policy("192.168.1.1 Erklärung", action="run_search")
         assert r.allowed
+
+    def test_ipv6_loopback_blocked(self):
+        r = enforce_policy("http://[::1]/admin", action="run_fetch")
+        assert not r.allowed
+
+    def test_ipv6_link_local_blocked(self):
+        # fe80::/10 — IPv6 link-local (z.B. fe80::1)
+        r = enforce_policy("http://[fe80::1]/internal", action="run_fetch")
+        assert not r.allowed
+
+    def test_cloud_metadata_ip_blocked(self):
+        # 169.254.169.254 — AWS/GCP/Azure Instance Metadata Service
+        r = enforce_policy("http://169.254.169.254/latest/meta-data/iam/", action="run_fetch")
+        assert not r.allowed
+
+    def test_cgnat_range_blocked(self):
+        # 100.64.0.0/10 — CGNAT (Carrier-Grade NAT) — intern
+        r = enforce_policy("http://100.64.0.1/internal", action="run_fetch")
+        assert not r.allowed
+
+    def test_172_private_range_blocked(self):
+        r = enforce_policy("http://172.16.0.1/admin", action="run_fetch")
+        assert not r.allowed
 
 
 # ── PII-Tokenisierung ─────────────────────────────────────────────────────────
